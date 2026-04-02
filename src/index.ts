@@ -13,6 +13,14 @@
 
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
-		return new Response("Hello World!");
+		const response = new Response("Hello World!");
+
+		// 🛡️ Security Enhancement: Add baseline security headers
+		response.headers.set("X-Content-Type-Options", "nosniff");
+		response.headers.set("X-Frame-Options", "DENY");
+		response.headers.set("Content-Security-Policy", "default-src 'none'");
+		response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+
+		return response;
 	},
 } satisfies ExportedHandler<Env>;
