@@ -19,6 +19,10 @@
 - O bucket R2 foi renomeado para `cfgateway` (Binding: `CFGATEWAY`).
 - A fila (Queue) foi renomeada para `mqcfgateway` (Binding: `MQCFGATEWAY`).
 - Lembre-se: Variáveis de ambiente (bindings) devem estar em MAIÚSCULO e os nomes dos recursos (bucket/queue) em minúsculo.
+- Declaração de rotas: app/routes.ts
+- Declaração das API de rotas: app/routes
+- Os modulos ficam em "app" exemplo do "app/welcome"
+
 
 # Cloudflare Workers - Agents Section
 

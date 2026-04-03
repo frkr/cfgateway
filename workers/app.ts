@@ -28,6 +28,7 @@ export default {
       cloudflare: { env, ctx },
     });
   },
+  
   async queue(batch, env): Promise<void> {
     console.log("Processing:",batch.queue);
     for (const msg of batch.messages) {
@@ -35,7 +36,7 @@ export default {
       try {
         // queue processing logic
       } catch (e) {
-        console.error("queue error", e);
+        console.error("Queue error:", e);
       } finally {
         if (delete_file) {
           try {

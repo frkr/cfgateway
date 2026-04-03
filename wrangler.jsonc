@@ -64,8 +64,8 @@
 		"consumers": [
 			{
 				"queue": "mqcfgateway",
-				"max_batch_size": 1,
-				"max_batch_timeout": 60,
+				"max_batch_size": 100,
+				"max_batch_timeout": 1,
 				"max_retries": 3
 			}
 		]
