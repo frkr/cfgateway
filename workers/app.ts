@@ -5,6 +5,7 @@
 import { createRequestHandler } from "react-router";
 import { HTTP_OK } from "../app/lib/httpcodes";
 import type { MQCFGATEWAYType } from '../MQCFGATEWAY';
+import database from "./database.json";
 
 declare module "react-router" {
   export interface AppLoadContext {
@@ -48,14 +49,19 @@ export default {
     let i={n:1};
     for (const msg of batch.messages) {
       console.log("Processing:",batch.queue,"Msg:", i.n++);
+      const now = Date.now();
       let delete_file = true;
       let body: MQCFGATEWAYType | null = null;
+      let content = "";
+      let status = "processed";
       try {
         body = msg.body as MQCFGATEWAYType;
         const file = await env.CFGATEWAY.get(body.filename);
-        console.log(await file?.text());
+        content = await file?.text() || "";
+        console.log(content);
       } catch (e) {
         console.error("Queue error:", e);
+        status = "error";
       } finally {
         if (delete_file) {
           try {
@@ -63,6 +69,15 @@ export default {
               await env.CFGATEWAY.delete(body.filename);
             }
           } catch (e) {}
+        }
+        if (body) {
+          try {
+            await env.DB.prepare(
+              database.messages.insert
+            ).bind(body.id, body.filename, content, now, status).run();
+          } catch (e) {
+            console.error("DB error:", e);
+          }
         }
         msg.ack();
       }

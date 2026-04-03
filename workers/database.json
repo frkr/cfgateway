@@ -1,0 +1,6 @@
+{
+  "messages": {
+    "createTable": "CREATE TABLE IF NOT EXISTS messages (id TEXT PRIMARY KEY, filename TEXT NOT NULL, content TEXT, processed_at INTEGER NOT NULL, status TEXT NOT NULL)",
+    "insert": "INSERT INTO messages (id, filename, content, processed_at, status) VALUES (?, ?, ?, ?, ?)"
+  }
+}

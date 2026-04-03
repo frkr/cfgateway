@@ -1,0 +1,3 @@
+{
+  "selectMessages": "SELECT id, filename, content, processed_at, status FROM messages ORDER BY processed_at DESC LIMIT 50"
+}

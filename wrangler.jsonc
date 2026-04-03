@@ -69,5 +69,12 @@
 				"max_retries": 3
 			}
 		]
-	}
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "cfgateway",
+			"database_id": "6894e4d0-81dc-43f6-aee2-910ea85bad44"
+		}
+	]
 }

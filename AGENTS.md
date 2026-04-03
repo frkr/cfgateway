@@ -23,6 +23,7 @@
 - Declaração de rotas: "app/routes.ts"
 - Declaração das API de rotas: "app/routes"
 - Os modulos ficam em "app" exemplo do "app/home". O "app/home", deve conter a página em React, enquanto o "app/routes" deve conter as rotas.
+- Todas as queries SQL (SELECT, INSERT, UPDATE, DELETE, CREATE TABLE, etc) devem estar em arquivos JSON dentro do diretório do módulo, ex: `app/lib/database.json`. Cada módulo terá seu próprio arquivo de queries.
 
 
 # Cloudflare Workers - Agents Section
