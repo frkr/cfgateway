@@ -8,7 +8,7 @@
 	"compatibility_date": "2025-04-04",
 	"main": "./workers/app.ts",
 	"observability": {
-		"enabled": true
+		"enabled": false
 	},
 	"upload_source_maps": true,
 	/**
@@ -63,7 +63,10 @@
 		],
 		"consumers": [
 			{
-				"queue": "mqpost"
+				"queue": "mqpost",
+				"max_batch_size": 1,
+				"max_batch_timeout": 60,
+				"max_retries": 3
 			}
 		]
 	}

@@ -170,3 +170,4 @@ dist
 # personal
 .envrc
 stash/
+build/

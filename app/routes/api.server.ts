@@ -1,14 +1,7 @@
 import { HTTP_CREATED, HTTP_UNPROCESSABLE_ENTITY } from "../lib/httpcodes";
 import randomHEX from "../lib/randomHEX";
 import type { Route } from "./+types/api";
-
-const isEmpty = (text: string | null | undefined): boolean => {
-	if (text === null || text === undefined) {
-		return true;
-	}
-	const rt = text.trim();
-	return rt.length === 0 || rt === 'null' || rt === 'undefined';
-};
+import { isEmpty } from '../lib/isEmpty';
 
 async function handleRequest(request: Request, env: Env) {
 	try {
