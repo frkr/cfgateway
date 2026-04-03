@@ -30,10 +30,10 @@ export default {
   },
   
   async queue(batch, env): Promise<void> {
-    console.log("Processing:",batch.queue, batch.messages.length);
-    let i=1
+    console.log("Processing:",batch.queue,"Total:", batch.messages.length);
+    let i={n:1};
     for (const msg of batch.messages) {
-      console.log("Processing:",i++);
+      console.log("Processing:",batch.queue,"Msg:", i.n++);
       let delete_file = true;
       try {
         // queue processing logic
