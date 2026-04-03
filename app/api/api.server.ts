@@ -1,6 +1,6 @@
 import { HTTP_CREATED, HTTP_UNPROCESSABLE_ENTITY } from "../lib/httpcodes";
 import randomHEX from "../lib/randomHEX";
-import type { Route } from "./+types/api";
+import type { Route } from "../routes/+types/api";
 import { isEmpty } from '../lib/isEmpty';
 import type { MQCFGATEWAYType } from '../../MQCFGATEWAY';
 

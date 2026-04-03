@@ -1,1 +1,1 @@
-export { loader, action } from "./api.server";
+export { loader, action } from "../api/api.server";

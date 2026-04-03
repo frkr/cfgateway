@@ -22,6 +22,19 @@ const requestHandler = createRequestHandler(
 
 export default {
   async fetch(request, env, ctx) {
+    
+    // TODO Cloudflare Facebook api
+    // Cloudflare
+    // let facebook = false;
+    // try {
+    //   facebook = request.cf?.asOrganization === "Facebook";
+    // } catch (e) {
+    // }
+    //
+    // if (facebook && request.method === 'GET') {
+    //   return challenge(env.META_VERIFY, request);
+    //
+    
     if (request.method === "OPTIONS") {
       return HTTP_OK();
     }
