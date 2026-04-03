@@ -171,3 +171,5 @@ dist
 .envrc
 stash/
 build/
+tsconfig.cloudflare.tsbuildinfo
+tsconfig.node.tsbuildinfo

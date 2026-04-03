@@ -16,9 +16,14 @@
   - worker-configuration.d.ts
 - O Arquivo "wrangler.jsonc" tem os recursos e variáveis de ambiente desse projeto conectado na Cloudflare.
 
+- O bucket R2 foi renomeado para `cfgateway` (Binding: `CFGATEWAY`).
+- A fila (Queue) foi renomeada para `mqcfgateway` (Binding: `MQCFGATEWAY`).
+- Lembre-se: Variáveis de ambiente (bindings) devem estar em MAIÚSCULO e os nomes dos recursos (bucket/queue) em minúsculo.
+
 # Cloudflare Workers - Agents Section
 
 > AGENTS! Your knowledge of Cloudflare Workers APIs and limits may be outdated. Always retrieve current documentation before any Workers, KV, R2, D1, Durable Objects, Queues, Vectorize, AI, or Agents SDK task.
+> AGENTS! Leave this section always on the final of the file.
 
 ## Docs
 
@@ -34,6 +39,8 @@ For all limits and quotas, retrieve from the product's `/platform/limits/` page.
 | `npx wrangler dev`    | Local development         |
 | `npx wrangler deploy` | Deploy to Cloudflare      |
 | `npx wrangler types`  | Generate TypeScript types |
+| `npx wrangler r2 bucket create cfgateway` | Create R2 bucket |
+| `npx wrangler queues create mqcfgateway` | Create Queue |
 
 Run `wrangler types` after changing bindings in wrangler.jsonc.
 

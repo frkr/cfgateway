@@ -50,20 +50,20 @@
 	// "services": [  {   "binding": "MY_SERVICE",   "service": "my-service"  } ],
 	"r2_buckets": [
 		{
-			"binding": "MQPOSTR2",
-			"bucket_name": "mqpostr2"
+			"binding": "CFGATEWAY",
+			"bucket_name": "cfgateway"
 		}
 	],
 	"queues": {
 		"producers": [
 			{
-				"binding": "MQPOST",
-				"queue": "mqpost"
+				"binding": "MQCFGATEWAY",
+				"queue": "mqcfgateway"
 			}
 		],
 		"consumers": [
 			{
-				"queue": "mqpost",
+				"queue": "mqcfgateway",
 				"max_batch_size": 1,
 				"max_batch_timeout": 60,
 				"max_retries": 3

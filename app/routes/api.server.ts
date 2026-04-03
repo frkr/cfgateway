@@ -12,9 +12,9 @@ async function handleRequest(request: Request, env: Env) {
 			const nextId = await randomHEX();
 			const filename = `${agora.getFullYear()}${agora.getMonth() + 1}${agora.getDate()}${agora.getHours()}${agora.getMinutes()}${agora.getSeconds()}-${nextId}.txt`;
 
-			await env.MQPOSTR2.put(filename, content);
+			await env.CFGATEWAY.put(filename, content);
 
-			await env.MQPOST.send({
+			await env.MQCFGATEWAY.send({
 				id: nextId,
 				url: request.url,
 			}, {

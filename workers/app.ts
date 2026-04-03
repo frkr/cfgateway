@@ -41,7 +41,7 @@ export default {
           try {
             const messageBody = msg.body as any;
             if (messageBody.id) {
-              await env.MQPOSTR2.delete(messageBody.id + ".txt");
+              await env.CFGATEWAY.delete(messageBody.id + ".txt");
             }
           } catch (e) {}
         }
