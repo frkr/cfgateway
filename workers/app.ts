@@ -36,7 +36,19 @@ export default {
       console.log("Processing:",batch.queue,"Msg:", i.n++);
       let delete_file = true;
       try {
-        // queue processing logic
+        
+        const messageBody = msg.body as any;
+        if (messageBody.id) {
+          const file = await env.CFGATEWAY.get(messageBody.id + ".txt");
+          if (file) {
+            const response = await fetch(messageBody.url, {
+              method: "POST",
+              body:  await file.text(),
+            });
+            if (response.status !== 200) {}
+          }
+        }
+        
       } catch (e) {
         console.error("Queue error:", e);
       } finally {

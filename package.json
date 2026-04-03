@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "react-router build",
+		"build": "pnpm typecheck && react-router build",
 		"cf-typegen": "wrangler types",
 		"deploy": "pnpm run build && wrangler deploy",
 		"dev": "react-router dev",
