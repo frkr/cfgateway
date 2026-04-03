@@ -8,7 +8,7 @@
 	"compatibility_date": "2025-04-04",
 	"main": "./workers/app.ts",
 	"observability": {
-		"enabled": false
+		"enabled": true
 	},
 	"upload_source_maps": true,
 	/**
@@ -37,7 +37,7 @@
 	// "vars": {  "MY_VARIABLE": "production_value" }
 	"vars": {
 		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare"
-	}
+	},
 	/**
 	 * Static Assets
 	 * https://developers.cloudflare.com/workers/static-assets/binding/
@@ -47,5 +47,24 @@
 	 * Service Bindings (communicate between multiple Workers)
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
 	 */
-	// "services": [  {   "binding": "MY_SERVICE",   "service": "my-service"  } ]
+	// "services": [  {   "binding": "MY_SERVICE",   "service": "my-service"  } ],
+	"r2_buckets": [
+		{
+			"binding": "MQPOSTR2",
+			"bucket_name": "mqpostr2"
+		}
+	],
+	"queues": {
+		"producers": [
+			{
+				"binding": "MQPOST",
+				"queue": "mqpost"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "mqpost"
+			}
+		]
+	}
 }
