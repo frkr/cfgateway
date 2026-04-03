@@ -49,20 +49,18 @@ export default {
     for (const msg of batch.messages) {
       console.log("Processing:",batch.queue,"Msg:", i.n++);
       let delete_file = true;
+      let body: MQCFGATEWAYType | null = null;
       try {
-        
-          let body = msg.body as MQCFGATEWAYType;
-          const file = await env.CFGATEWAY.get(body.filename);
-          console.log( await file?.text());
-        
+        body = msg.body as MQCFGATEWAYType;
+        const file = await env.CFGATEWAY.get(body.filename);
+        console.log(await file?.text());
       } catch (e) {
         console.error("Queue error:", e);
       } finally {
         if (delete_file) {
           try {
-            const messageBody = msg.body as any;
-            if (messageBody.id) {
-              await env.CFGATEWAY.delete(messageBody.id + ".txt");
+            if (body && body.filename) {
+              await env.CFGATEWAY.delete(body.filename);
             }
           } catch (e) {}
         }
