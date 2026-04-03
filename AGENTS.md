@@ -18,12 +18,12 @@
 
 - O bucket R2 foi renomeado para `cfgateway` (Binding: `CFGATEWAY`).
 - A fila (Queue) foi renomeada para `mqcfgateway` (Binding: `MQCFGATEWAY`).
-- Lembre-se: Variáveis de ambiente (bindings) devem estar em MAIÚSCULO e os nomes dos recursos (bucket/queue) em minúsculo.
-- Funcoes diversas e uteis: "app/lib"
+- Lembre-se: variáveis de ambiente (bindings) devem estar em MAIÚSCULO e os nomes dos recursos (bucket/queue) em minúsculo.
+- Funções diversas e uteis: "app/lib"
 - Declaração de rotas: "app/routes.ts"
 - Declaração das API de rotas: "app/routes"
-- Os modulos ficam em "app" exemplo do "app/home". O "app/home", deve conter a página em React, enquanto o "app/routes" deve conter as rotas.
-- Todas as queries SQL (SELECT, INSERT, UPDATE, DELETE, CREATE TABLE, etc) devem estar em arquivos JSON dentro do diretório do módulo, ex: `app/lib/database.json`. Cada módulo terá seu próprio arquivo de queries.
+- Os modulos ficam em "app" exemplo do "app/panel". O "app/panel", deve conter a página em React, enquanto o "app/routes" deve conter as rotas.
+- Todas as queries SQL (SELECT, INSERT, UPDATE, DELETE, CREATE TABLE, etc) devem estar em arquivos JSON dentro do diretório do módulo, ex: `app/panel/database.json`. Cada módulo terá seu próprio arquivo de queries.
 
 
 # Cloudflare Workers - Agents Section
@@ -40,13 +40,13 @@ For all limits and quotas, retrieve from the product's `/platform/limits/` page.
 
 ## Commands
 
-| Command               | Purpose                   |
-|-----------------------|---------------------------|
-| `npx wrangler dev`    | Local development         |
-| `npx wrangler deploy` | Deploy to Cloudflare      |
-| `npx wrangler types`  | Generate TypeScript types |
-| `npx wrangler r2 bucket create cfgateway` | Create R2 bucket |
-| `npx wrangler queues create mqcfgateway` | Create Queue |
+| Command                                   | Purpose                   |
+|-------------------------------------------|---------------------------|
+| `npx wrangler dev`                        | Local development         |
+| `npx wrangler deploy`                     | Deploy to Cloudflare      |
+| `npx wrangler types`                      | Generate TypeScript types |
+| `npx wrangler r2 bucket create cfgateway` | Create R2 bucket          |
+| `npx wrangler queues create mqcfgateway`  | Create Queue              |
 
 Run `wrangler types` after changing bindings in wrangler.jsonc.
 
