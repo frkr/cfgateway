@@ -5,8 +5,8 @@
   "instructions": [
     "AGENTS.md"
   ],
-  "model": "opencode/grok-code",
-  "small_model": "opencode/grok-code",
+  "model": "opencode/minimax-m25",
+  "small_model": "opencode/minimax-m25",
   "tools": {
     "todowrite": true,
     "todoread": true,
@@ -17,15 +17,10 @@
     "doom_loop": "deny"
   },
   "mcp": {
-    "mcp_DOCKER": {
+    "mcp_cf_doc": {
       "enabled": true,
-      "type": "local",
-      "command": [
-        "docker",
-        "mcp",
-        "gateway",
-        "run"
-      ]
+      "type": "remote",
+      "url": "https://docs.mcp.cloudflare.com/mcp"
     }
   }
 }
