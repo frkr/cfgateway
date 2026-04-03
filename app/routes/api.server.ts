@@ -2,6 +2,7 @@ import { HTTP_CREATED, HTTP_UNPROCESSABLE_ENTITY } from "../lib/httpcodes";
 import randomHEX from "../lib/randomHEX";
 import type { Route } from "./+types/api";
 import { isEmpty } from '../lib/isEmpty';
+import type { MQCFGATEWAYType } from '../../MQCFGATEWAY';
 
 async function handleRequest(request: Request, env: Env) {
 	try {
@@ -17,7 +18,8 @@ async function handleRequest(request: Request, env: Env) {
 			await env.MQCFGATEWAY.send({
 				id: nextId,
 				url: request.url,
-			}, {
+				filename
+			} as MQCFGATEWAYType, {
 				contentType: "json",
 			});
 		}

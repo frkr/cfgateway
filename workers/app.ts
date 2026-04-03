@@ -4,6 +4,7 @@
 
 import { createRequestHandler } from "react-router";
 import { HTTP_OK } from "../app/lib/httpcodes";
+import type { MQCFGATEWAYType } from '../MQCFGATEWAY';
 
 declare module "react-router" {
   export interface AppLoadContext {
@@ -37,17 +38,9 @@ export default {
       let delete_file = true;
       try {
         
-        const messageBody = msg.body as any;
-        if (messageBody.id) {
-          const file = await env.CFGATEWAY.get(messageBody.id + ".txt");
-          if (file) {
-            const response = await fetch(messageBody.url, {
-              method: "POST",
-              body:  await file.text(),
-            });
-            if (response.status !== 200) {}
-          }
-        }
+          let body = msg.body as MQCFGATEWAYType;
+          const file = await env.CFGATEWAY.get(body.filename);
+          console.log( await file?.text());
         
       } catch (e) {
         console.error("Queue error:", e);
