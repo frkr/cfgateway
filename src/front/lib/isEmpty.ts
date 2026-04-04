@@ -1,4 +1,4 @@
-export const isEmpty = (text: string | null | undefined): boolean => {
+export default function  (text: string | null | undefined): boolean  {
 	if (text === null || text === undefined) {
 		return true;
 	}

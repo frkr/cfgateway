@@ -1,4 +1,4 @@
-# This project is about Cloudflare Gatway that I made.
+# This project is about Cloudflare Gateway. Will store HTTP requests and responses in a database and could make replay messages.
 
 > Este arquivo 'AGENTS.md' é a fonte de verdade absoluta para agentes de IA
 
@@ -7,24 +7,14 @@
   - README.pt-br.md - Em português do Brasil
   - README.es.md - Em espanhol
 - Os nomes dos arquivos "README" são um exemplo como toda documentação deve ser feita em arquivos Markdown (Gráficos em Mermaid JS) e traduzidas nessas línguas usando esse formato de arquivo.
-- Arquivos da Raiz importantes para o projeto:
-  - wrangler.jsonc
-  - AGENTS.md
-  - package.json
-  - tsconfig.json
-  - vitest.config.ts
-  - worker-configuration.d.ts
-- O Arquivo "wrangler.jsonc" tem os recursos e variáveis de ambiente desse projeto conectado na Cloudflare.
-
-- O bucket R2 foi renomeado para `cfgateway` (Binding: `CFGATEWAY`).
-- A fila (Queue) foi renomeada para `mqcfgateway` (Binding: `MQCFGATEWAY`).
-- Lembre-se: variáveis de ambiente (bindings) devem estar em MAIÚSCULO e os nomes dos recursos (bucket/queue) em minúsculo.
-- Funções diversas e uteis: "app/lib"
-- Declaração de rotas: "app/routes.ts"
-- Declaração das API de rotas: "app/routes"
-- Os modulos ficam em "app" exemplo do "app/panel". O "app/panel", deve conter a página em React, enquanto o "app/routes" deve conter as rotas.
-- Todas as queries SQL (SELECT, INSERT, UPDATE, DELETE, CREATE TABLE, etc) devem estar em arquivos JSON dentro do diretório do módulo, ex: `app/panel/database.json`. Cada módulo terá seu próprio arquivo de queries.
-
+- wrangler.jsonc - tem os recursos e variáveis de ambiente desse projeto conectado na Cloudflare.
+- Variáveis de ambiente da Cloudflare (bindings) devem estar em MAIÚSCULO e os nomes dos recursos (bucket/queue) em minúsculo. Exemplo: (Queue) foi renomeada para `mqcfgateway` (Binding: `MQCFGATEWAY`).
+- Entrypoint de todas as request: "src/front/api/mainroute.ts"
+- Todas as Rotas do React Router: "src/front/routes.ts"
+- Todas as rotas do React Router tem um arquivo de inicialização aqui: "src/front/routes"
+- O Arquivo de inicialização "src/front/routes" deve conter apenas um facade para referenciar funcoes externas. Use o exemplo "mainroute.ts" e o "panel.tsx" para entender como fazer.
+- Os modulos do backend devem ficar em "src/front/.server" use de exemplo o Panel: "src/front/.server/panel"
+- Os modulos para a Message Queue devem ficar em "src/mq", use o "mqstore" como exemplo
 
 # Cloudflare Workers - Agents Section
 
@@ -40,13 +30,15 @@ For all limits and quotas, retrieve from the product's `/platform/limits/` page.
 
 ## Commands
 
-| Command                                   | Purpose                   |
-|-------------------------------------------|---------------------------|
-| `npx wrangler dev`                        | Local development         |
-| `npx wrangler deploy`                     | Deploy to Cloudflare      |
-| `npx wrangler types`                      | Generate TypeScript types |
-| `npx wrangler r2 bucket create cfgateway` | Create R2 bucket          |
-| `npx wrangler queues create mqcfgateway`  | Create Queue              |
+| Command                                               | Purpose                   |
+|-------------------------------------------------------|---------------------------|
+| `npx wrangler dev`                                    | Local development         |
+| `npx wrangler deploy`                                 | Deploy to Cloudflare      |
+| `npx wrangler types`                                  | Generate TypeScript types |
+| `npx wrangler r2 bucket create cfgateway`             | Create R2 bucket          |
+| `npx wrangler queues create mqcfgateway`              | Create Queue              |
+| `npx wrangler queues create mqcfgateway-dlq`          | Create Dead Letter Queue  |
+| `npx wrangler d1 create new-database --location=enam` | Create D1 Database        |
 
 Run `wrangler types` after changing bindings in wrangler.jsonc.
 

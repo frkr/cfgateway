@@ -2,8 +2,7 @@
   "extends": "./tsconfig.json",
   "include": [
     "vite.config.ts",
-    "app/**/*.json",
-    "workers/**/*.json"
+    "src/**/*.json"
   ],
   "compilerOptions": {
     "composite": true,

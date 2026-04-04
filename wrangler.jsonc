@@ -5,12 +5,12 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "cfgateway",
-	"compatibility_date": "2025-04-04",
-	"main": "./workers/app.ts",
+	"compatibility_date": "2026-04-04",
+	"main": "./src/worker.ts",
 	"observability": {
 		"enabled": false
 	},
-	"upload_source_maps": true,
+	"upload_source_maps": false,
 	/**
 	* The nodejs_compat compatibility flag gives your Worker access to Node.js built-in modules like node:crypto, node:buffer, node:stream, and others. Many libraries depend on these modules, and enabling this flag avoids cryptic import errors at runtime.
 	*/
@@ -34,7 +34,6 @@
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
 	"vars": {
 		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare"
 	},
@@ -64,9 +63,13 @@
 		"consumers": [
 			{
 				"queue": "mqcfgateway",
-				"max_batch_size": 100,
-				"max_batch_timeout": 1,
-				"max_retries": 3
+				"max_batch_size": 1,
+				"dead_letter_queue": "mqcfgateway-dlq"
+			},
+			{
+				"queue": "mqcfgateway-dlq",
+				"max_batch_size": 30,
+				"max_batch_timeout": 60
 			}
 		]
 	},
