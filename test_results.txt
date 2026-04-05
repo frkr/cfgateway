@@ -1,0 +1,20 @@
+
+ RUN  v2.1.8 /app
+
+(node:129127) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[vpw:debug] Adding `enable_nodejs_tty_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_fs_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_http_modules` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_perf_hooks_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:info] Starting isolated runtimes for vitest.config.mts...
+[mf:warn] The latest compatibility date supported by the installed Cloudflare Workers Runtime is "2025-10-11",
+but you've requested "2026-04-04". Falling back to "2025-10-11"...
+ ✓ test/lib/randomHEX.spec.ts (3 tests) 61ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  01:50:27
+   Duration  4.95s (transform 89ms, setup 0ms, collect 77ms, tests 61ms, environment 0ms, prepare 327ms)
+
+[vpw:debug] Shutting down runtimes...
