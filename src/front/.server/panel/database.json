@@ -1,3 +1,4 @@
 {
-  "selectMessages": "SELECT id, id_parent, filename, content, processed_at, status FROM messages ORDER BY processed_at DESC LIMIT 50"
+  "selectMessages": "SELECT id, id_parent, url, filename, content, processed_at, status FROM messages ORDER BY processed_at DESC LIMIT 50",
+  "selectMessagesPaged": "SELECT id, id_parent, url, filename, content, processed_at, status FROM messages ORDER BY processed_at DESC LIMIT ? OFFSET ?"
 }
