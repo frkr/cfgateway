@@ -8,6 +8,7 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
   const [hasMore, setHasMore] = useState(initialMessages.length >= 20);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [retryLoading, setRetryLoading] = useState(false);
+  const [retryResult, setRetryResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastMessageElementRef = useCallback((node: HTMLElement | null) => {
@@ -21,25 +22,31 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
     if (node) observer.current.observe(node);
   }, [loading, hasMore]);
 
-  const fetchMessages = async (currentOffset: number) => {
-    setLoading(true);
+  const fetchMessages = async (currentOffset: number, isRefresh = false) => {
+    if (!isRefresh) setLoading(true);
     try {
       const res = await fetch(`/panel/messages?offset=${currentOffset}&limit=20&json=1`);
       const data: { messages?: Message[] } = await res.json();
       const newMessages = data.messages || [];
-      if (newMessages.length < 20) {
+      if (!isRefresh && newMessages.length < 20) {
         setHasMore(false);
       }
       setMessages(prev => {
-         const combined = [...prev, ...newMessages];
-         // Unique by id to avoid duplicates
-         const unique = Array.from(new Map(combined.map(m => [m.id, m])).values());
-         return unique;
+         const combined = isRefresh ? [...newMessages, ...prev] : [...prev, ...newMessages];
+         const map = new Map();
+         combined.forEach(m => {
+            if (!map.has(m.id)) {
+                map.set(m.id, m);
+            }
+         });
+         return Array.from(map.values()).sort((a, b) =>
+            new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime()
+         );
       });
     } catch (e) {
       console.error("Fetch error:", e);
     }
-    setLoading(false);
+    if (!isRefresh) setLoading(false);
   };
 
   useEffect(() => {
@@ -47,6 +54,13 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
         fetchMessages(offset);
     }
   }, [offset]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchMessages(0, true);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getPath = (urlStr: string) => {
     try {
@@ -72,14 +86,13 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
             }),
         });
         if (res.ok) {
-            alert("Retry sent successfully!");
-            setSelectedMessage(null);
+            setRetryResult({ success: true, message: "Mensagem enviada com sucesso" });
         } else {
-            alert("Failed to retry.");
+            setRetryResult({ success: false, message: "Mensagem com erro" });
         }
     } catch (e) {
         console.error("Retry error:", e);
-        alert("An error occurred.");
+        setRetryResult({ success: false, message: "Mensagem com erro" });
     } finally {
         setRetryLoading(false);
     }
@@ -187,6 +200,23 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
           </div>
         </div>
       )}
+
+      {retryResult && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-30 p-4 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded border border-gray-200 dark:border-gray-800 max-w-xs w-full shadow-2xl text-center">
+            <h3 className={`text-sm font-bold uppercase mb-4 ${retryResult.success ? 'text-green-600' : 'text-red-600'}`}>
+              {retryResult.message}
+            </h3>
+            <button
+              onClick={() => setRetryResult(null)}
+              className="w-full py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-[10px] font-bold uppercase transition-colors"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
