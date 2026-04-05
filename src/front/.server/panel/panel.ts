@@ -1,6 +1,7 @@
 import type { Route } from "../../routes/+types/panel";
 import database from './database.json';
 import type { Message } from '@/database';
+import type { MQCFGATEWAYMessage } from '@/MQCFGATEWAY';
 
 export async function loader({ request, context }: Route.LoaderArgs) {
 	const accept = request.headers.get("Accept") || "";
@@ -32,4 +33,28 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 	}
 }
 
-export const action = loader;
+export async function action({ request, context }: Route.ActionArgs) {
+	if (request.method === "POST") {
+		try {
+			const body = await request.json() as { intent?: string; message?: Message };
+			if (body.intent === "retry" && body.message) {
+				const { message } = body;
+				await context.cloudflare.env.MQCFGATEWAY.send({
+					id: message.id,
+					url: message.url,
+					filename: message.filename,
+					type: "in",
+					time: Date.now(),
+				} as MQCFGATEWAYMessage, {
+					contentType: "json",
+				});
+				return Response.json({ success: true });
+			}
+		} catch (e) {
+			console.error("Action error:", e);
+			return Response.json({ success: false, error: String(e) }, { status: 400 });
+		}
+	}
+
+	return loader({ request, context } as Route.LoaderArgs);
+}
