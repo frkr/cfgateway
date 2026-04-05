@@ -28,6 +28,7 @@ async function handleRequest(request: Request, env: Env) {
 			} as MQCFGATEWAYMessage, {
 				contentType: "json",
 			});
+			
 		} else {
 			throw new Error("Content is empty or too short.");
 		}

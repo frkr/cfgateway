@@ -39,15 +39,28 @@ export async function action({ request, context }: Route.ActionArgs) {
 			const body = await request.json() as { intent?: string; message?: Message };
 			if (body.intent === "retry" && body.message) {
 				const { message } = body;
-				await context.cloudflare.env.MQCFGATEWAY.send({
-					id: message.id,
-					url: message.url,
-					filename: message.filename,
-					type: "in",
-					time: Date.now(),
-				} as MQCFGATEWAYMessage, {
-					contentType: "json",
-				});
+				
+				// TODO fazer igual o mainroute.ts
+				// TOOD deixar o trecho de codigo como uma funcao exportada no mainroute.ts para conseguir ser chamada pelo panel.ts
+				
+				/*
+				const agora = new Date(); // deve sempre manter a data atual
+			const nextId = await randomHEX(); // sempre pegar um id novo
+			const fname = mqfilename(agora, nextId); // para criar um novo arquivo, deve sempre chamar essa funcao
+
+			await env.CFGATEWAY.put(fname, content); // o metodo de retry vai criar um novo arquivo
+
+			await env.MQCFGATEWAY.send({ // essa é a forma correta de fazer um retry
+				id: nextId,
+				url: request.url,
+				filename:fname,
+				type: "in",
+				time: agora.getTime(),
+			} as MQCFGATEWAYMessage, {
+				contentType: "json",
+			});
+				 */
+				
 				return Response.json({ success: true });
 			}
 		} catch (e) {
