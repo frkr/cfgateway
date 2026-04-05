@@ -15,6 +15,6 @@ export default async function (rawmsg: Message<unknown>, env: Env, type?:MQCFGAT
 		
 		await env.DB.prepare(
 			database.insert
-		).bind(await randomHEX(), msg.id, msg.filename, content, resettime ? Date.now(): msg.time, type || msg.type).run();
+		).bind(await randomHEX(), msg.id, msg.url, msg.filename, content, resettime ? Date.now(): msg.time, type || msg.type).run();
 	
 }

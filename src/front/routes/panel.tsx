@@ -1,6 +1,5 @@
 import { Welcome } from '~/panel/welcome';
 import type { Route } from "./+types/panel";
-
 import type { Message } from '@/database';
 
 interface LoaderData {
