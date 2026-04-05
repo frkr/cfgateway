@@ -7,28 +7,31 @@ import isEmpty from '@/isEmpty';
 import mqfilename from '@/mqfilename';
 //endregion
 
+export async function storeMessage(content: string, url: string, env: Env) {
+	const agora = new Date();
+	const nextId = await randomHEX();
+	const fname = mqfilename(agora, nextId);
+
+	await env.CFGATEWAY.put(fname, content);
+
+	await env.MQCFGATEWAY.send({
+		id: nextId,
+		url: url,
+		filename: fname,
+		type: "in",
+		time: agora.getTime(),
+	} as MQCFGATEWAYMessage, {
+		contentType: "json",
+	});
+}
+
 // Essa função esta perfeita e não deve ser alterada sem permissao do usuário
 async function handleRequest(request: Request, env: Env) {
 	try {
 		const content = await request.text();
 
 		if (!isEmpty(content) && content.length > 10) {
-			const agora = new Date();
-			const nextId = await randomHEX();
-			const fname = mqfilename(agora, nextId);
-
-			await env.CFGATEWAY.put(fname, content);
-
-			await env.MQCFGATEWAY.send({
-				id: nextId,
-				url: request.url,
-				filename:fname,
-				type: "in",
-				time: agora.getTime(),
-			} as MQCFGATEWAYMessage, {
-				contentType: "json",
-			});
-			
+			await storeMessage(content, request.url, env);
 		} else {
 			throw new Error("Content is empty or too short.");
 		}
