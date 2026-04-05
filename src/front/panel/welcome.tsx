@@ -7,6 +7,7 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
   const [offset, setOffset] = useState(initialMessages.length);
   const [hasMore, setHasMore] = useState(initialMessages.length >= 20);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [retryLoading, setRetryLoading] = useState(false);
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastMessageElementRef = useCallback((node: HTMLElement | null) => {
@@ -53,6 +54,34 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
       return url.pathname + url.search;
     } catch (e) {
       return urlStr;
+    }
+  };
+
+  const handleRetry = async () => {
+    if (!selectedMessage || retryLoading) return;
+    setRetryLoading(true);
+    try {
+        const res = await fetch("/panel/messages", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                intent: "retry",
+                message: selectedMessage,
+            }),
+        });
+        if (res.ok) {
+            alert("Retry sent successfully!");
+            setSelectedMessage(null);
+        } else {
+            alert("Failed to retry.");
+        }
+    } catch (e) {
+        console.error("Retry error:", e);
+        alert("An error occurred.");
+    } finally {
+        setRetryLoading(false);
     }
   };
 
@@ -140,7 +169,14 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
                 </pre>
               </div>
             </div>
-            <div className="mt-4 pt-2 border-t dark:border-gray-800 flex justify-end">
+            <div className="mt-4 pt-2 border-t dark:border-gray-800 flex justify-end gap-2">
+                <button
+                    onClick={handleRetry}
+                    disabled={retryLoading}
+                    className="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400 rounded text-[10px] font-bold uppercase flex items-center gap-2"
+                >
+                    {retryLoading ? "Sending..." : "Retry"}
+                </button>
                 <button
                     onClick={() => setSelectedMessage(null)}
                     className="px-4 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-[10px] font-bold uppercase"
