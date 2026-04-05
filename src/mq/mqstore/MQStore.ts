@@ -1,6 +1,7 @@
 import type { MQCFGATEWAYMessage, MQCFGATEWAYType } from '@/MQCFGATEWAY';
-import database from "./database.json"
 import randomHEX from '@/randomHEX';
+
+const INSERT_MESSAGE_SQL = "INSERT INTO messages (id, id_parent, filename, content, processed_at, status) VALUES (?, ?, ?, ?, ?, ?)";
 
 export default async function (rawmsg: Message<unknown>, env: Env, type?:MQCFGATEWAYType, resettime?:boolean) {
 	
@@ -14,7 +15,7 @@ export default async function (rawmsg: Message<unknown>, env: Env, type?:MQCFGAT
 		}
 		
 		await env.DB.prepare(
-			database.insert
+			INSERT_MESSAGE_SQL
 		).bind(await randomHEX(), msg.id, msg.filename, content, resettime ? Date.now(): msg.time, type || msg.type).run();
 	
 }

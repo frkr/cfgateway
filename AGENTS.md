@@ -9,12 +9,20 @@
 - Os nomes dos arquivos "README" são um exemplo como toda documentação deve ser feita em arquivos Markdown (Gráficos em Mermaid JS) e traduzidas nessas línguas usando esse formato de arquivo.
 - wrangler.jsonc - tem os recursos e variáveis de ambiente desse projeto conectado na Cloudflare.
 - Variáveis de ambiente da Cloudflare (bindings) devem estar em MAIÚSCULO e os nomes dos recursos (bucket/queue) em minúsculo. Exemplo: (Queue) foi renomeada para `mqcfgateway` (Binding: `MQCFGATEWAY`).
-- Entrypoint de todas as request: "src/front/api/mainroute.ts"
+- Entrypoint de todas as request: "src/front/routes/mainroute.ts"
 - Todas as Rotas do React Router: "src/front/routes.ts"
 - Todas as rotas do React Router tem um arquivo de inicialização aqui: "src/front/routes"
 - O Arquivo de inicialização "src/front/routes" deve conter apenas um facade para referenciar funcoes externas. Use o exemplo "mainroute.ts" e o "panel.tsx" para entender como fazer.
 - Os modulos do backend devem ficar em "src/front/.server" use de exemplo o Panel: "src/front/.server/panel"
 - Os modulos para a Message Queue devem ficar em "src/mq", use o "mqstore" como exemplo
+
+# Security Section
+
+- Todas as alterações de código devem passar por uma revisão de segurança.
+- Se você encontrar um alerta de segurança no GitHub Code Scanning, você DEVE priorizar a correção desse alerta.
+- Ao implementar novas rotas, sempre considere a necessidade de autenticação (usando `ADMIN_TOKEN`).
+- SQL queries devem ser escritas como constantes no código TypeScript para evitar problemas de injeção e facilitar o scan.
+- Limite o tamanho do payload para evitar ataques de DoS.
 
 # Cloudflare Workers - Agents Section
 

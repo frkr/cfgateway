@@ -10,9 +10,14 @@ import mqfilename from '@/mqfilename';
 // Essa função esta perfeita e não deve ser alterada sem permissao do usuário
 async function handleRequest(request: Request, env: Env) {
 	try {
+		const contentLength = Number(request.headers.get("Content-Length"));
+		if (contentLength > 1024 * 1024) {
+			return new Response("Payload Too Large", { status: 413 });
+		}
+
 		const content = await request.text();
 
-		if (!isEmpty(content) && content.length > 10) {
+		if (!isEmpty(content) && content.length > 10 && content.length <= 1024 * 1024) {
 			const agora = new Date();
 			const nextId = await randomHEX();
 			const fname = mqfilename(agora, nextId);

@@ -1,0 +1,24 @@
+name: Security Review
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  semgrep-pr:
+    name: Semgrep PR Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/typescript
+            p/javascript
+            p/react
+          auditOn: true
+          # Only report new findings in the PR
+          baselineRef: ${{ github.base_ref }}
