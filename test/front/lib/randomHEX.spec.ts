@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import randomHEX from "../src/front/lib/randomHEX";
+import randomHEX from "../../../src/front/lib/randomHEX";
 import crypto from "node:crypto";
 
 describe("randomHEX", () => {

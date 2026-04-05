@@ -11,6 +11,7 @@ export default defineConfig({
 			wrangler: { configPath: "./wrangler.jsonc" },
 		}),
 	],
+
 	test: {
 		testTimeout: 15000,
 	},
