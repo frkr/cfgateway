@@ -51,7 +51,27 @@ export default {
 		});
 	},
 	
-	// TODO Fazer um sched - Deletar arquivos muito velhos await env.CFGATEWAY.delete(body.filename);
+	// Implementation for deleting old files from R2
+	async scheduled(event, env, ctx) {
+		const MAX_AGE_DAYS = 30;
+		const now = Date.now();
+		const maxAgeMs = MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+
+		let truncated = true;
+		let cursor: string | undefined;
+
+		while (truncated) {
+			const result: R2Objects = await env.CFGATEWAY.list({ cursor });
+			for (const object of result.objects) {
+				if (now - object.uploaded.getTime() > maxAgeMs) {
+					console.log(`Deleting old file: ${object.key}`);
+					await env.CFGATEWAY.delete(object.key);
+				}
+			}
+			truncated = result.truncated;
+			cursor = result.truncated ? result.cursor : undefined;
+		}
+	},
 	
 	async queue(batch, env): Promise<void> {
 		if (batch.messages.length === 0) return;

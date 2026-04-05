@@ -22,6 +22,11 @@
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
 	 */
 	"placement": {  "mode": "smart" },
+	"triggers": {
+		"crons": [
+			"0 0 * * *"
+		]
+	},
 	/**
 	 * Bindings
 	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
