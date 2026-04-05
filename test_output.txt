@@ -1,0 +1,14 @@
+
+ RUN  v2.1.9 /app
+
+[vpw:inf] Starting isolated runtimes for vitest.config.mts...
+[mf:wrn] The latest compatibility date supported by the installed Cloudflare Workers Runtime is "2024-12-30",
+but you've requested "2026-04-04". Falling back to "2024-12-30"...
+ ✓ test/lib/isEmpty.spec.ts (8 tests) 76ms
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  01:45:07
+   Duration  2.05s (transform 47ms, setup 0ms, collect 47ms, tests 76ms, environment 0ms, prepare 355ms)
+
+[vpw:dbg] Shutting down runtimes...
