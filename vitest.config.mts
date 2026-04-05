@@ -11,6 +11,11 @@ export default defineConfig({
 			wrangler: { configPath: "./wrangler.jsonc" },
 		}),
 	],
+import tsconfigPaths from "vite-tsconfig-paths";
+
+export default defineWorkersConfig({
+	plugins: [tsconfigPaths()],
+
 	test: {
 		testTimeout: 15000,
 	},
