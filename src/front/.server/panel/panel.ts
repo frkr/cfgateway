@@ -15,7 +15,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 		const data = {
 			message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE,
-			messages: results as Message[]
+			messages: results as unknown as Message[]
 		};
 
 		if (accept.includes("application/json") || url.searchParams.has("json")) {

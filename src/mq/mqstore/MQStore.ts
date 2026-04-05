@@ -1,4 +1,3 @@
-import type { Message } from '@cloudflare/workers-types';
 import type { MQCFGATEWAYMessage, MQCFGATEWAYType } from '@/MQCFGATEWAY';
 import database from "./database.json"
 import randomHEX from '@/randomHEX';
