@@ -31,7 +31,7 @@ const requestHandler = createRequestHandler(
  */
 export default {
 	
-	// A função abaixo deve ficar simples e inalterada
+	// A função abaixo deve ficar simples e inalterada. Pedir permissao para o usuario se precisar alterar.
 	async fetch(request, env, ctx) {
 		// TODO Facebook verification
 		// let facebook = false;
