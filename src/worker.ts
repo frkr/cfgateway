@@ -77,7 +77,7 @@ export default {
 					
 				} else if (msg.type === 'store') {
 					
-					await MQStore(rawmsg, env);
+					await MQStore(rawmsg, env, 'in');
 					
 				} else if (msg.type === 'process') {
 					

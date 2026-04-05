@@ -72,7 +72,7 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
               <ul className="space-y-2 max-h-96 overflow-y-auto">
                 {messages.map((msg) => (
                   <li key={msg.id} className="border p-3 rounded text-sm">
-                    <p><strong>ID:</strong> {msg.id}</p>
+                    <p><strong>ID:</strong> {msg.id_parent}</p>
                     <p><strong>Arquivo:</strong> {msg.filename}</p>
                     <p><strong>Status:</strong> {msg.status}</p>
                     <p><strong>Processado em:</strong> {new Date(msg.processed_at).toLocaleString()}</p>

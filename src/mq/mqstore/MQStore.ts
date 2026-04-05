@@ -1,7 +1,8 @@
 import type { MQCFGATEWAYMessage, MQCFGATEWAYType } from '@/MQCFGATEWAY';
 import database from "./database.json"
+import randomHEX from '@/randomHEX';
 
-export default async function (rawmsg: Message<unknown>, env: Env, type?:MQCFGATEWAYType) {
+export default async function (rawmsg: Message<unknown>, env: Env, type?:MQCFGATEWAYType, resettime?:boolean) {
 	
 	let msg = rawmsg.body as MQCFGATEWAYMessage;
 	
@@ -15,7 +16,7 @@ export default async function (rawmsg: Message<unknown>, env: Env, type?:MQCFGAT
 		
 		await env.DB.prepare(
 			database.insert
-		).bind(msg.id, msg.filename, content, msg.time, type || msg.type).run();
+		).bind(await randomHEX(), msg.id, msg.filename, content, resettime ? Date.now(): msg.time, type || msg.type).run();
 	} catch (e) {
 		console.error("DB error:", e);
 	}
