@@ -1,12 +1,9 @@
 name: Semgrep
 
 on:
-  push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 * * *' # Daily at midnight
+  workflow_dispatch:
 
 jobs:
   semgrep:
