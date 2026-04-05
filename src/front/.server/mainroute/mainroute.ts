@@ -1,10 +1,10 @@
 //region Imports
 import type { Route } from "../../routes/+types/mainroute";
-import type { MQCFGATEWAYMessage } from '../../lib/MQCFGATEWAY';
-import { HTTP_CREATED, HTTP_UNPROCESSABLE_ENTITY } from "../../lib/httpcodes";
-import randomHEX from "../../lib/randomHEX";
-import isEmpty from '../../lib/isEmpty';
-import mqfilename from '../../lib/mqfilename';
+import type { MQCFGATEWAYMessage } from '@/MQCFGATEWAY';
+import { HTTP_CREATED, HTTP_UNPROCESSABLE_ENTITY } from '@/httpcodes';
+import randomHEX from "@/randomHEX";
+import isEmpty from '@/isEmpty';
+import mqfilename from '@/mqfilename';
 //endregion
 
 // Essa função esta perfeita e não deve ser alterada sem permissao do usuário

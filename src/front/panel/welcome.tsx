@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import type { Message } from "../lib/database";
+import type { Message } from '@/database';
 
 export function Welcome({ message, messages: initialMessages = [] }: { message: string; messages?: Message[] }) {
   const [messages, setMessages] = useState(initialMessages);

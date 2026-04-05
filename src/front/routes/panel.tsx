@@ -1,7 +1,7 @@
-import { Welcome } from '../panel/welcome';
+import { Welcome } from '~/panel/welcome';
 import type { Route } from "./+types/panel";
 
-import type { Message } from "../lib/database";
+import type { Message } from '@/database';
 
 interface LoaderData {
   message: string;

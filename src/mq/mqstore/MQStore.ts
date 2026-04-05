@@ -1,4 +1,4 @@
-import type { MQCFGATEWAYMessage, MQCFGATEWAYType } from '../../front/lib/MQCFGATEWAY';
+import type { MQCFGATEWAYMessage, MQCFGATEWAYType } from '@/MQCFGATEWAY';
 import database from "./database.json"
 
 export default async function (rawmsg: Message<unknown>, env: Env, type?:MQCFGATEWAYType) {

@@ -6,7 +6,7 @@ import MQIn from './mq/mqin/MQIn';
 import MQErr from './mq/mqerr/MQErr';
 import MQProc from './mq/mqproc/MQProc';
 import MQOut from './mq/mqout/MQOut';
-import MQDeadLetter from './mq/mqd/MQDeadLetter';
+import MQDeadLetter from './mq/mqdlq/MQDeadLetter';
 import MQStore from './mq/mqstore/MQStore';
 //endregion
 
