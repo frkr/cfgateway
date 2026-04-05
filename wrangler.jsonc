@@ -64,12 +64,16 @@
 			{
 				"queue": "mqcfgateway",
 				"max_batch_size": 1,
+				"retry_delay": 1,
+				"max_retries": 5,
 				"dead_letter_queue": "mqcfgateway-dlq"
 			},
 			{
 				"queue": "mqcfgateway-dlq",
 				"max_batch_size": 30,
-				"max_batch_timeout": 60
+				"max_batch_timeout": 60,
+				"retry_delay": 1,
+				"max_retries": 5
 			}
 		]
 	},
