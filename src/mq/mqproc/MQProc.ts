@@ -7,7 +7,8 @@ export default async function (rawmsg: Message<unknown>, env: Env) {
 	// Out
 	await env.MQCFGATEWAY.send({
 		...msg,
-		type: 'out'
+		type: 'out',
+		time: Date.now()
 	} as MQCFGATEWAYMessage, {
 		contentType: "json",
 	});

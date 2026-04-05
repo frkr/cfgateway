@@ -3,7 +3,7 @@ import MQStore from '../mqstore/MQStore';
 
 export default async function (rawmsg: Message<unknown>, env: Env) {
 	
-	await MQStore(rawmsg,env,"out",true);
+	await MQStore(rawmsg,env,"out");
 	try {
 	  await env.CFGATEWAY.delete((rawmsg.body as MQCFGATEWAYMessage) .filename);
 	} catch (e) {
