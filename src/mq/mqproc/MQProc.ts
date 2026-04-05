@@ -8,13 +8,7 @@ export default async function (rawmsg: Message<unknown>, env: Env) {
 	
 	if (path === "/store") {
 		
-		// Store
-		await env.MQCFGATEWAY.send({
-			...msg,
-			type: 'out',
-		} as MQCFGATEWAYMessage, {
-			contentType: "json",
-		});
+		// Noop
 		
 	} else {
 		
