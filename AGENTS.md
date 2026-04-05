@@ -38,6 +38,7 @@ For all limits and quotas, retrieve from the product's `/platform/limits/` page.
 | `npx wrangler r2 bucket create cfgateway`             | Create R2 bucket          |
 | `npx wrangler queues create mqcfgateway`              | Create Queue              |
 | `npx wrangler queues create mqcfgateway-dlq`          | Create Dead Letter Queue  |
+| `npx wrangler d1 execute <database> --remote --command="ALTER TABLE <table> ADD COLUMN <column> <type>"` | Add column to D1 table |
 | `npx wrangler d1 create new-database --location=enam` | Create D1 Database        |
 
 Run `wrangler types` after changing bindings in wrangler.jsonc.
