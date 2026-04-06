@@ -1,8 +1,18 @@
-POST https://cfgateway.casaid.workers.dev/async/30
+### Raiz
+POST https://cfgateway.casaid.workers.dev/
 Content-Type: application/json
 
 {
-  "destiny": "https://github.com/frkr",
-  "callback": "https://cfgateway.casaid.workers.dev/store/31",
-  "method": "GET"
+  "message": "simples"
 }
+
+### Async
+POST https://cfgateway.casaid.workers.dev/async/40
+Content-Type: application/json
+
+{
+  "method": "GET",
+  "destiny": "https://github.com/frkr",
+  "callback": "https://cfgateway.casaid.workers.dev/store/41"
+}
+

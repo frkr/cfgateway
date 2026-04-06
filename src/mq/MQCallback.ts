@@ -72,7 +72,7 @@ export default async function(rawmsg: Message<unknown>, env: Env) {
 		
 	} catch (error) {
 		console.error('Error processing async message callback:', error);
-		if (rawmsg.attempts < 5) {
+		if (rawmsg.attempts <= 5) {
 			rawmsg.retry({ delaySeconds: 10 });
 			throw new Error('Retrying...');
 		} else {
