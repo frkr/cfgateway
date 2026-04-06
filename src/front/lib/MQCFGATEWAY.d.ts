@@ -8,3 +8,12 @@ export type MQCFGATEWAYMessage = {
   type?: MQCFGATEWAYType;
   time: number;
 }
+
+export type MQCFGATEWAYMessageAsync =  {
+  content?: string;
+  destiny?: string;
+  callback?: string;
+  method?: string;
+  contentType?: string;
+  headers?: Map<string, string>;
+};
