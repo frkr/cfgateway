@@ -5,7 +5,6 @@ import type { MQCFGATEWAYMessage } from '~/lib/MQCFGATEWAY';
 import MQIn from './mq/mqin/MQIn';
 import MQErr from './mq/mqerr/MQErr';
 import MQProc from './mq/mqproc/MQProc';
-import MQOut from './mq/mqout/MQOut';
 import MQDeadLetter from './mq/mqdlq/MQDeadLetter';
 import MQStore from './mq/mqstore/MQStore';
 //endregion
@@ -56,10 +55,10 @@ export default {
 		const MAX_AGE_DAYS = 30;
 		const now = Date.now();
 		const maxAgeMs = MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
-
+		
 		let truncated = true;
 		let cursor: string | undefined;
-
+		
 		while (truncated) {
 			const result: R2Objects = await env.CFGATEWAY.list({ cursor });
 			for (const object of result.objects) {
@@ -105,7 +104,11 @@ export default {
 					
 				} else if (msg.type === 'out') {
 					
-					await MQOut(rawmsg, env);
+					await MQStore(rawmsg, env, 'out');
+					
+				} else if (msg.type === 'internal') {
+					
+					await MQStore(rawmsg, env, 'internal');
 					
 				} else {
 					
