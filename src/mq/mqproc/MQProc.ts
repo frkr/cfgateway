@@ -1,108 +1,122 @@
 import type { MQCFGATEWAYMessage, MQCFGATEWAYMessageAsync } from '@/MQCFGATEWAY';
+import MQStore from '../mqstore/MQStore';
 import mqfilename from '@/mqfilename';
 import randomHEX from '@/randomHEX';
 
-export default async function(rawmsg: Message<unknown>, env: Env) {
-	
+export default async function (rawmsg: Message<unknown>, env: Env) {
+
 	let msg = rawmsg.body as MQCFGATEWAYMessage;
-	
-	let path: string | null = null;
+
+	let url: URL;
 	try {
-		path = new URL(msg.url).pathname;
+		url = new URL(msg.url);
 	} catch (e) {
+		console.error("Invalid URL in message:", msg.url);
+		return;
 	}
-	
-	if (path?.startsWith('/store')) {
-		
+	let path = url.pathname;
+
+	if (path === '/store') {
+
 		// Noop
-		
-	} else if (path?.startsWith('/async')) {
-		
-		let content: any | null = null;
-		try {
-			let r2Object = await env.CFGATEWAY.get(msg.filename);
-			if (r2Object) {
-				content = JSON.parse(await r2Object.text());
-			}
-		} catch (e) {
-			console.error('Error reading file from R2:', e);
-		}
-		
-		let asyncMsg = content as MQCFGATEWAYMessageAsync;
-		
-		if (
-			!asyncMsg.destiny ||
-			(msg.type === 'callback' && !asyncMsg.callback)
-		) {
+
+	} else if (path === '/async') {
+
+		const asyncMsg = rawmsg.body as MQCFGATEWAYMessageAsync;
+
+		if (!asyncMsg.destiny) {
+			console.error("Missing destiny in async message");
 			return;
 		}
-		
+
 		try {
-			let headers = new Headers();
+			const headers = new Headers();
 			if (asyncMsg.headers) {
-				for (let [key, value] of Object.entries(asyncMsg.headers)) {
+				for (const [key, value] of Object.entries(asyncMsg.headers)) {
 					headers.set(key, value);
 				}
 			}
 			if (asyncMsg.contentType) {
 				headers.set('Content-Type', asyncMsg.contentType);
 			}
-			
-			let destinyResponse = await fetch((msg.type === 'callback' ? asyncMsg.callback : asyncMsg.destiny) as string, {
+
+			const destinyResponse = await fetch(asyncMsg.destiny, {
 				method: asyncMsg.method || 'POST',
 				headers: headers,
-				body: asyncMsg.content || null
+				body: (asyncMsg.method === 'GET' || asyncMsg.method === 'HEAD') ? undefined : asyncMsg.content,
 			});
-			
+
 			if (!destinyResponse.ok) {
-				throw new Error(`Fetch failed with status ${destinyResponse.status}`);
+				throw new Error(`Destiny fetch failed with status ${destinyResponse.status}`);
 			}
-			
+
 			const destinyContent = await destinyResponse.text();
-			
+
 			// Store response of Destiny
-			let destinyTime = new Date();
-			let destinyNextId = await randomHEX();
-			let destinyFilename = mqfilename(destinyTime, destinyNextId);
+			const destinyTime = new Date();
+			const destinyNextId = await randomHEX();
+			const destinyFilename = mqfilename(destinyTime, destinyNextId);
 			await env.CFGATEWAY.put(destinyFilename, destinyContent);
-			
-			await env.MQCFGATEWAY.send({
-				id: msg.id,
-				url: asyncMsg.destiny,
-				filename: destinyFilename,
-				time: destinyTime.getTime(),
-				type: msg.type === 'callback' ? 'internal' : 'out',
-				id_parent: msg.id
-			} as MQCFGATEWAYMessage, {
-				contentType: 'json'
-			});
-			
-			if (msg.type !== 'callback') {
-				
-				await env.MQCFGATEWAY.send({
-					id: msg.id,
+
+			await MQStore({
+				...rawmsg,
+				body: {
+					id: destinyNextId,
 					url: asyncMsg.destiny,
 					filename: destinyFilename,
 					time: destinyTime.getTime(),
-					type: 'callback'
-				} as MQCFGATEWAYMessage, {
-					contentType: 'json'
+					type: 'process'
+				} as MQCFGATEWAYMessage
+			}, env, 'process', false, msg.id);
+
+			if (asyncMsg.callback) {
+				const callbackResponse = await fetch(asyncMsg.callback, {
+					method: 'POST',
+					headers: {
+						'Content-Type': destinyResponse.headers.get('Content-Type') || 'text/plain',
+					},
+					body: destinyContent,
 				});
+
+				const callbackContent = await callbackResponse.text();
+
+				// Store response of Callback
+				const callbackTime = new Date();
+				const callbackNextId = await randomHEX();
+				const callbackFilename = mqfilename(callbackTime, callbackNextId);
+				await env.CFGATEWAY.put(callbackFilename, callbackContent);
+
+				await MQStore({
+					...rawmsg,
+					body: {
+						id: callbackNextId,
+						url: asyncMsg.callback,
+						filename: callbackFilename,
+						time: callbackTime.getTime(),
+						type: 'process'
+					} as MQCFGATEWAYMessage
+				}, env, 'process', false, msg.id);
 			}
-			
+
 		} catch (error) {
-			console.error('Error processing async message:', error);
+			console.error("Error processing async message:", error);
 			if (rawmsg.attempts < 5) {
 				rawmsg.retry({ delaySeconds: 10 });
-				throw new Error('Retrying...');
 			} else {
 				throw error; // Let it go to DLQ
 			}
 		}
-		
+
 	} else {
 		
-		// Lost
+		// Store - Lost
+		await env.MQCFGATEWAY.send({
+			...msg,
+			type: 'out',
+			time: Date.now(),
+		} as MQCFGATEWAYMessage, {
+			contentType: "json",
+		});
 		
 	}
 	
