@@ -154,7 +154,7 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
 						<div className="flex justify-between items-start mb-4 border-b dark:border-gray-800 pb-2">
 							<div>
 								<h2 className="text-sm font-bold uppercase tracking-tighter">Request Details</h2>
-								<p className="text-[10px] text-gray-500 font-mono">{selectedMessage.id}</p>
+								<p className="text-[10px] text-gray-500 font-mono">{selectedMessage.id_parent}</p>
 							</div>
 							<button onClick={() => setSelectedMessage(null)}
 							        className="text-gray-500 hover:text-black dark:hover:text-white text-xl leading-none">&times;</button>
@@ -162,7 +162,7 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
 						<div className="space-y-4 overflow-y-auto flex-1 pr-2 custom-scrollbar text-[11px]">
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 								<div>
-									<label className="text-[10px] uppercase text-gray-400 font-bold">Status</label>
+									<label className="text-[10px] uppercase text-gray-400 font-bold">Type</label>
 									<p className="font-semibold">{selectedMessage.status}</p>
 								</div>
 								<div>
@@ -173,10 +173,6 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
 									<label className="text-[10px] uppercase text-gray-400 font-bold">URL</label>
 									<p
 										className="break-all bg-gray-50 dark:bg-gray-950 p-1 rounded border border-gray-100 dark:border-gray-900">{selectedMessage.url}</p>
-								</div>
-								<div>
-									<label className="text-[10px] uppercase text-gray-400 font-bold">Parent ID</label>
-									<p className="font-mono">{selectedMessage.id_parent}</p>
 								</div>
 								<div>
 									<label className="text-[10px] uppercase text-gray-400 font-bold">Filename</label>
