@@ -1,8 +1,8 @@
-POST https://cfgateway.casaid.workers.dev/async/6
+POST https://cfgateway.casaid.workers.dev/async/11
 Content-Type: application/json
 
 {
-  "destiny": "https://google.com",
-  "callback": "https://cfgateway.casaid.workers.dev/store",
+  "destiny": "https://github.com/frkr",
+  "callback": "https://cfgateway.casaid.workers.dev/store/12",
   "method": "GET"
 }

@@ -1,11 +1,15 @@
-export type MQCFGATEWAYType = 'in' | 'out' | 'error' | 'process' | 'store' | 'dlq' | 'lost' | 'internal' | 'callback';
+export type MQCFGATEWAYType =
+	'in' | 'out' | 'error' | 'store' | 'dlq' | 'lost' | 'internal'
+	| 'callback'
+
 
 export type MQCFGATEWAYMessage = {
-	id: string;
-	url: string;
-	filename: string;
+	id?: string;
+	url?: string;
+	filename?: string;
+	time?: number;
 	type?: MQCFGATEWAYType;
-	time: number;
+	lab?: boolean;
 }
 
 export type MQCFGATEWAYMessageAsync = {

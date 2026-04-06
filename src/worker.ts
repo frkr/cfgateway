@@ -2,10 +2,9 @@
 import type { MQCFGATEWAYMessage } from '~/lib/MQCFGATEWAY';
 import { createRequestHandler } from 'react-router';
 import { HTTP_OK } from '~/lib/httpcodes';
-import MQIn from './mq/mqin/MQIn';
-import MQErr from './mq/mqerr/MQErr';
-import MQProc from './mq/mqproc/MQProc';
-import MQStore from './mq/mqstore/MQStore';
+import MQStore from './mq/MQStore';
+import MQProc from './mq/MQProc';
+import MQCallback from './mq/MQCallback';
 //endregion
 
 //region Inicializacao React Router
@@ -78,8 +77,7 @@ export default {
 			for (const rawmsg of batch.messages) {
 				try {
 					await MQStore(rawmsg, env, {
-						type: 'dlq',
-						delete: true
+						type: 'dlq'
 					});
 					rawmsg.ack();
 				} catch (e) {
@@ -91,13 +89,19 @@ export default {
 		for (const rawmsg of batch.messages) {
 			try {
 				
-				// TODO Retry messages need to save on database with little flag
-				
 				let msg = rawmsg.body as MQCFGATEWAYMessage;
 				
 				if (msg.type === 'in') {
 					
-					await MQIn(rawmsg, env);
+					// Store
+					await env.MQCFGATEWAY.send({
+						...msg,
+						type: 'store'
+					} as MQCFGATEWAYMessage, {
+						contentType: 'json'
+					});
+					
+					await MQProc(rawmsg, env);
 					
 				} else if (msg.type === 'store') {
 					
@@ -107,11 +111,7 @@ export default {
 					
 				} else if (msg.type === 'callback') {
 					
-					await MQProc(rawmsg, env);
-					
-				} else if (msg.type === 'process') {
-					
-					await MQProc(rawmsg, env);
+					await MQCallback(rawmsg, env);
 					
 				} else if (msg.type === 'out') {
 					
@@ -122,19 +122,18 @@ export default {
 				} else if (msg.type === 'internal') {
 					
 					await MQStore(rawmsg, env, {
-						type: 'internal',
-						delete: true
+						type: 'internal'
 					});
 					
 				} else {
-					
-					await MQErr(rawmsg, env);
-					
+					await MQStore(rawmsg, env, {
+						type: 'lost'
+					});
 				}
 				
 				rawmsg.ack();
 			} catch (e) {
-				await MQErr(rawmsg, env);
+				// Vai pro DLQ
 			}
 		}
 	}
