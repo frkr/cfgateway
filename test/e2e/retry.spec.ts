@@ -19,24 +19,25 @@ test.describe('Retry Button Functionality', () => {
       message: 'Hello from Cloudflare'
     };
 
-    // Dialog handler
-    let dialogMessage = '';
-    page.on('dialog', async (dialog) => {
-      dialogMessage = dialog.message();
-      console.log('Dialog appeared:', dialogMessage);
-      await dialog.accept();
-    });
-
     // Mocking
     await page.route('**/*', async (route) => {
       const url = route.request().url();
-      if (url.includes('/panel') && (url.includes('json=1') || route.request().headers()['accept']?.includes('application/json'))) {
-         console.log('Mocking data request:', url);
+      const method = route.request().method();
+      if (url.includes('/panel/messages') && method === 'GET') {
+         console.log('Mocking GET data request:', url);
          return route.fulfill({
            status: 200,
            contentType: 'application/json',
            body: JSON.stringify(mockMessages),
          });
+      }
+      if (url.includes('/panel/messages') && method === 'POST') {
+        console.log('Mocking POST retry request:', url);
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true }),
+        });
       }
       return route.continue();
     });
@@ -62,8 +63,8 @@ test.describe('Retry Button Functionality', () => {
     await expect(retryButton).toBeVisible();
     await retryButton.click();
 
-    // Verify alert message
-    console.log('Waiting for success alert');
-    await expect.poll(() => dialogMessage, { timeout: 5000 }).toContain('Retry sent successfully!');
+    // Verify success message in the custom modal
+    console.log('Waiting for success message');
+    await expect(page.getByText('Mensagem enviada com sucesso')).toBeVisible({ timeout: 5000 });
   });
 });
