@@ -1,4 +1,5 @@
 {
     "createTable": "CREATE TABLE IF NOT EXISTS messages (id TEXT PRIMARY KEY, id_parent TEXT, url TEXT, filename TEXT NOT NULL, content TEXT, processed_at INTEGER NOT NULL, status TEXT NOT NULL, lab INTEGER)",
-    "insert": "INSERT INTO messages (id, id_parent, url, filename, content, processed_at, status, lab) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    "insert": "INSERT INTO messages (id, id_parent, url, filename, content, processed_at, status, lab) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "deleteOld": "DELETE FROM messages WHERE processed_at < ?"
 }

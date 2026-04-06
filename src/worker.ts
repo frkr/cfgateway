@@ -5,6 +5,7 @@ import { HTTP_OK } from '~/lib/httpcodes';
 import MQStore from './mq/MQStore';
 import MQProc from './mq/MQProc';
 import MQCallback from './mq/MQCallback';
+import database from './mq/database.json';
 //endregion
 
 //region Inicializacao React Router
@@ -69,6 +70,8 @@ export default {
 			truncated = result.truncated;
 			cursor = result.truncated ? result.cursor : undefined;
 		}
+
+		await env.DB.prepare(database.deleteOld).bind(now - maxAgeMs).run();
 	},
 	
 	async queue(batch, env): Promise<void> {
