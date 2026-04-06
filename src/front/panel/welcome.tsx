@@ -62,6 +62,20 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
 		return () => clearInterval(interval);
 	}, []);
 	
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') {
+				if (retryResult) {
+					setRetryResult(null);
+				} else if (selectedMessage) {
+					setSelectedMessage(null);
+				}
+			}
+		};
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [selectedMessage, retryResult]);
+	
 	// Will be used to get the path of the URL
 	const getPath = (urlStr: string) => {
 		try {
