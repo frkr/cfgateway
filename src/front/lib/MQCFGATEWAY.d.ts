@@ -1,8 +1,7 @@
-export type MQCFGATEWAYType = 'in' | 'out' | 'error' | 'process' | 'store' | 'dlq' | 'lost' | 'internal';
+export type MQCFGATEWAYType = 'in' | 'out' | 'error' | 'process' | 'store' | 'dlq' | 'lost' | 'internal' | 'callback';
 
 export type MQCFGATEWAYMessage = {
 	id: string;
-	id_parent?: string;
 	url: string;
 	filename: string;
 	type?: MQCFGATEWAYType;

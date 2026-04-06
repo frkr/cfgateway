@@ -1,7 +1,11 @@
 import MQStore from '../mqstore/MQStore';
 
-export default async function (rawmsg: Message<unknown>, env: Env) {
+export default async function(rawmsg: Message<unknown>, env: Env) {
 	
-	await MQStore(rawmsg,env,"error",true);
+	await MQStore(rawmsg, env, {
+		type: 'error',
+		resettime: true,
+		delete: true
+	});
 	
 }
