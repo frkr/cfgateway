@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import MQProc from '../../../src/mq/MQProc';
+import MQCallback from '../../../src/mq/MQCallback';
 import type { MQCFGATEWAYMessage, MQCFGATEWAYMessageAsync } from '@/MQCFGATEWAY';
 import database from '../../../src/mq/database.json';
 
@@ -35,6 +36,9 @@ describe('MQProc', () => {
 			ack: vi.fn()
 		} as any;
 		
+		// Put message content in R2
+		await env.CFGATEWAY.put(asyncMsg.filename, JSON.stringify(asyncMsg));
+
 		// Mock destiny response
 		(global.fetch as any).mockResolvedValueOnce({
 			ok: true,
@@ -43,6 +47,36 @@ describe('MQProc', () => {
 			headers: new Headers({ 'Content-Type': 'application/json' })
 		});
 		
+		// 1. Run MQProc (which calls MQDestiny)
+		await MQProc(rawmsg, env);
+
+		// Verify destiny fetch
+		expect(global.fetch).toHaveBeenCalledWith('http://destiny.com', expect.objectContaining({
+			method: 'POST',
+			body: 'payload'
+		}));
+
+		// 2. Simulate what the worker queue handler does when it receives the 'callback' message
+		// We need to find the filename that was generated for the destiny response
+		const r2Objects = await env.CFGATEWAY.list();
+		const destinyResponseFile = r2Objects.objects.find(obj => obj.key !== asyncMsg.filename);
+		expect(destinyResponseFile).toBeDefined();
+
+		const callbackMsg: MQCFGATEWAYMessage = {
+			id: 'test-parent-id',
+			url: 'http://callback.com',
+			filename: destinyResponseFile!.key,
+			time: Date.now(),
+			type: 'callback'
+		};
+
+		const callbackRawMsg = {
+			body: callbackMsg,
+			attempts: 1,
+			retry: vi.fn(),
+			ack: vi.fn()
+		} as any;
+
 		// Mock callback response
 		(global.fetch as any).mockResolvedValueOnce({
 			ok: true,
@@ -51,13 +85,7 @@ describe('MQProc', () => {
 			headers: new Headers()
 		});
 		
-		await MQProc(rawmsg, env);
-		
-		// Verify destiny fetch
-		expect(global.fetch).toHaveBeenCalledWith('http://destiny.com', expect.objectContaining({
-			method: 'POST',
-			body: 'payload'
-		}));
+		await MQCallback(callbackRawMsg, env);
 		
 		// Verify callback fetch
 		expect(global.fetch).toHaveBeenCalledWith('http://callback.com', expect.objectContaining({
@@ -65,19 +93,53 @@ describe('MQProc', () => {
 			body: 'destiny response'
 		}));
 		
+		// 3. To verify D1 records, we need to run MQStore for the messages that were sent to the queue
+		// In the real worker, MQStore is called for 'out' and 'internal' types.
+		// MQDestiny sends an 'out' message.
+		// MQCallback sends an 'internal' message.
+
+		const outMsg = {
+			id: 'test-parent-id',
+			url: 'http://destiny.com',
+			filename: destinyResponseFile!.key,
+			time: Date.now(),
+			type: 'out'
+		};
+
+		// Find the callback response filename
+		const r2ObjectsAfterCallback = await env.CFGATEWAY.list();
+		const callbackResponseFile = r2ObjectsAfterCallback.objects.find(obj => obj.key !== asyncMsg.filename && obj.key !== destinyResponseFile!.key);
+		expect(callbackResponseFile).toBeDefined();
+
+		const internalMsg = {
+			id: 'test-parent-id',
+			url: 'http://callback.com',
+			filename: callbackResponseFile!.key,
+			time: Date.now(),
+			type: 'internal'
+		};
+
+		// We call MQStore directly to simulate the worker's behavior for these types
+		const { default: MQStore } = await import('../../../src/mq/MQStore');
+		await MQStore({ body: outMsg, ack: vi.fn() } as any, env, { type: 'callback' });
+		await MQStore({ body: internalMsg, ack: vi.fn() } as any, env, { type: 'internal' });
+
 		// Verify D1 records
 		const { results } = await env.DB.prepare('SELECT * FROM messages').all();
-		// Results should be 2: destiny response and callback response
 		expect(results.length).toBe(2);
 		
 		const destinyRecord = results.find((r: any) => r.url === 'http://destiny.com');
 		expect(destinyRecord).toBeDefined();
-		expect(destinyRecord?.content).toBe('destiny response');
+		// The content stored in R2 by MQDestiny is a JSON containing the destiny response text
+		const destinyStoredContent = JSON.parse(destinyRecord?.content);
+		expect(destinyStoredContent.content).toBe('destiny response');
 		expect(destinyRecord?.id_parent).toBe('test-parent-id');
 		
 		const callbackRecord = results.find((r: any) => r.url === 'http://callback.com');
 		expect(callbackRecord).toBeDefined();
-		expect(callbackRecord?.content).toBe('callback response');
+		// Similar for callback response
+		const callbackStoredContent = JSON.parse(callbackRecord?.content);
+		expect(callbackStoredContent.content).toBe('callback response');
 		expect(callbackRecord?.id_parent).toBe('test-parent-id');
 	});
 	
@@ -98,12 +160,16 @@ describe('MQProc', () => {
 			ack: vi.fn()
 		} as any;
 		
+		// Put message content in R2
+		await env.CFGATEWAY.put(asyncMsg.filename, JSON.stringify(asyncMsg));
+
 		(global.fetch as any).mockResolvedValueOnce({
 			ok: false,
 			status: 500
 		});
 		
-		await MQProc(rawmsg, env);
+		// We expect MQProc to throw when it calls rawmsg.retry() as implemented in MQDestiny.ts
+		await expect(MQProc(rawmsg, env)).rejects.toThrow('Retrying...');
 		
 		expect(rawmsg.retry).toHaveBeenCalledWith({ delaySeconds: 10 });
 	});

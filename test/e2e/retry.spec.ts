@@ -9,7 +9,7 @@ test.describe('Retry Button Functionality', () => {
           id: 'msg_1',
           url: 'https://example.com/api/test',
           method: 'POST',
-          status: 200,
+          status: 'in', // Changed status to 'in' to make retry button visible
           processed_at: '2023-10-27T10:00:00Z',
           id_parent: 'parent_1',
           filename: 'file_1.json',
