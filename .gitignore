@@ -174,3 +174,7 @@ stash/
 build/
 tsconfig.cloudflare.tsbuildinfo
 tsconfig.node.tsbuildinfo
+
+# Playwright
+playwright-report/
+test-results/

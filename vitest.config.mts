@@ -14,5 +14,6 @@ export default defineConfig({
 
 	test: {
 		testTimeout: 15000,
+		exclude: ["node_modules", "test/e2e/**"],
 	},
 });
