@@ -1,12 +1,10 @@
 //region Imports
+import type { MQCFGATEWAYMessage } from '~/lib/MQCFGATEWAY';
 import { createRequestHandler } from 'react-router';
 import { HTTP_OK } from '~/lib/httpcodes';
-import type { MQCFGATEWAYMessage } from '~/lib/MQCFGATEWAY';
 import MQIn from './mq/mqin/MQIn';
 import MQErr from './mq/mqerr/MQErr';
 import MQProc from './mq/mqproc/MQProc';
-import MQOut from './mq/mqout/MQOut';
-import MQDeadLetter from './mq/mqdlq/MQDeadLetter';
 import MQStore from './mq/mqstore/MQStore';
 //endregion
 
@@ -55,11 +53,12 @@ export default {
 	async scheduled(event, env, ctx) {
 		const MAX_AGE_DAYS = 30;
 		const now = Date.now();
+		// TODO configurar no wrangler.jsonc
 		const maxAgeMs = MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
-
+		
 		let truncated = true;
 		let cursor: string | undefined;
-
+		
 		while (truncated) {
 			const result: R2Objects = await env.CFGATEWAY.list({ cursor });
 			for (const object of result.objects) {
@@ -78,7 +77,10 @@ export default {
 		if (batch.queue === 'mqcfgateway-dlq') {
 			for (const rawmsg of batch.messages) {
 				try {
-					await MQDeadLetter(rawmsg, env);
+					await MQStore(rawmsg, env, {
+						type: 'dlq',
+						delete: true
+					});
 					rawmsg.ack();
 				} catch (e) {
 					console.error('MQDeadLetter error:', e);
@@ -89,6 +91,8 @@ export default {
 		for (const rawmsg of batch.messages) {
 			try {
 				
+				// TODO Retry messages need to save on database with little flag
+				
 				let msg = rawmsg.body as MQCFGATEWAYMessage;
 				
 				if (msg.type === 'in') {
@@ -97,7 +101,13 @@ export default {
 					
 				} else if (msg.type === 'store') {
 					
-					await MQStore(rawmsg, env, 'in');
+					await MQStore(rawmsg, env, {
+						type: 'in'
+					});
+					
+				} else if (msg.type === 'callback') {
+					
+					await MQProc(rawmsg, env);
 					
 				} else if (msg.type === 'process') {
 					
@@ -105,7 +115,16 @@ export default {
 					
 				} else if (msg.type === 'out') {
 					
-					await MQOut(rawmsg, env);
+					await MQStore(rawmsg, env, {
+						type: 'out'
+					});
+					
+				} else if (msg.type === 'internal') {
+					
+					await MQStore(rawmsg, env, {
+						type: 'internal',
+						delete: true
+					});
 					
 				} else {
 					
