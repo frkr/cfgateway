@@ -65,7 +65,8 @@ export default async function(rawmsg: Message<unknown>, env: Env) {
 				url: asyncContent.callback,
 				filename: destinyFilename,
 				time: destinyTime.getTime(),
-				type: 'callback'
+				type: 'callback',
+				lab: msg.lab
 			} as MQCFGATEWAYMessage, {
 				contentType: 'json'
 			});
@@ -76,7 +77,8 @@ export default async function(rawmsg: Message<unknown>, env: Env) {
 			url: asyncContent.destiny,
 			filename: destinyFilename,
 			time: destinyTime.getTime(),
-			type: 'out'
+			type: 'out',
+			lab: msg.lab
 		} as MQCFGATEWAYMessage, {
 			contentType: 'json'
 		});

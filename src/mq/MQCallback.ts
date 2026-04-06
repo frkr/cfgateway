@@ -64,7 +64,8 @@ export default async function(rawmsg: Message<unknown>, env: Env) {
 			url: asyncContent.callback,
 			filename: callbackFilename,
 			time: callbackTime.getTime(),
-			type: 'internal'
+			type: 'internal',
+			lab: msg.lab
 		} as MQCFGATEWAYMessage, {
 			contentType: 'json'
 		});

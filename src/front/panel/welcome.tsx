@@ -135,10 +135,21 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
 								onClick={() => setSelectedMessage(msg)}
 								className="flex justify-between items-center py-0.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer group"
 							>
-                <span className="truncate mr-4 text-gray-800 dark:text-gray-200 group-hover:text-blue-500"
-                      title={msg.url}>
-                    {msg.url}
-                </span>
+								<div className="flex items-center gap-2">
+									<span className={`${msg.lab ? 'text-amber-500' : 'text-gray-300'}`} title={msg.lab ? 'Lab' : 'Prod'}>
+										<svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+										     strokeLinecap="round" strokeLinejoin="round">
+											<path
+												d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2" />
+											<path d="M8.5 2h7" />
+											<path d="M7 16h10" />
+										</svg>
+									</span>
+									<span className="truncate mr-4 text-gray-800 dark:text-gray-200 group-hover:text-blue-500"
+									      title={msg.url}>
+										{msg.url}
+									</span>
+								</div>
 								<span className="text-gray-400 shrink-0 tabular-nums">
                     {new Date(msg.processed_at).toLocaleString()}
                 </span>
@@ -202,6 +213,7 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
 							</div>
 						</div>
 						<div className="mt-4 pt-2 border-t dark:border-gray-800 flex justify-end gap-2">
+							{(selectedMessage.status === 'in' || selectedMessage.status === 'callback') && (
 							<button
 								onClick={handleRetry}
 								disabled={retryLoading}
@@ -209,6 +221,7 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
 							>
 								{retryLoading ? 'Sending...' : 'Retry'}
 							</button>
+							)}
 							<button
 								onClick={() => setSelectedMessage(null)}
 								className="px-4 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-[10px] font-bold uppercase"

@@ -116,7 +116,7 @@ export default {
 				} else if (msg.type === 'out') {
 					
 					await MQStore(rawmsg, env, {
-						type: 'out'
+						type: 'callback'
 					});
 					
 				} else if (msg.type === 'internal') {

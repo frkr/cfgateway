@@ -52,5 +52,5 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-	return handleRequest(request, context.cloudflare.env, true);
+	return handleRequest(request, context.cloudflare.env);
 }
