@@ -51,9 +51,8 @@ export default {
 	
 	// Implementation for deleting old files from R2
 	async scheduled(event, env, ctx) {
-		const MAX_AGE_DAYS = 30;
+		const MAX_AGE_DAYS = Number(env.MAX_AGE_DAYS || 30);
 		const now = Date.now();
-		// TODO configurar no wrangler.jsonc
 		const maxAgeMs = MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
 		
 		let truncated = true;
