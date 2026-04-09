@@ -25,7 +25,10 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
 	const fetchMessages = async (currentOffset: number, isRefresh = false) => {
 		if (!isRefresh) setLoading(true);
 		try {
-			const res = await fetch(`/panel/messages?offset=${currentOffset}&limit=20&json=1`);
+			const tokenParam = new URLSearchParams(window.location.search).get('token');
+			const headers = new Headers();
+			if (tokenParam) headers.set('Authorization', `Bearer ${tokenParam}`);
+			const res = await fetch(`/panel/messages?offset=${currentOffset}&limit=20&json=1`, { headers });
 			const data: { messages?: Message[] } = await res.json();
 			const newMessages = data.messages || [];
 			if (!isRefresh && newMessages.length < 20) {
@@ -90,11 +93,14 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
 		if (!selectedMessage || retryLoading) return;
 		setRetryLoading(true);
 		try {
+			const tokenParam = new URLSearchParams(window.location.search).get('token');
+			const headers: Record<string, string> = {
+				'Content-Type': 'application/json'
+			};
+			if (tokenParam) headers['Authorization'] = `Bearer ${tokenParam}`;
 			const res = await fetch('/panel/messages', {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
+				headers,
 				body: JSON.stringify({
 					intent: 'retry',
 					message: selectedMessage
