@@ -9,7 +9,7 @@ test.describe('Retry Button Functionality', () => {
           id: 'msg_1',
           url: 'https://example.com/api/test',
           method: 'POST',
-          status: 200,
+          status: 'in',
           processed_at: '2023-10-27T10:00:00Z',
           id_parent: 'parent_1',
           filename: 'file_1.json',
@@ -43,7 +43,7 @@ test.describe('Retry Button Functionality', () => {
     });
 
     console.log('Navigating to /panel');
-    await page.goto('/panel');
+    await page.goto('/panel?token=change_me_in_production');
 
     // Wait for the message to appear
     console.log('Waiting for message link');

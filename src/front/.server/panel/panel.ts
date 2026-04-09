@@ -3,7 +3,23 @@ import database from './database.json';
 import type { Message } from '@/database';
 import { storeMessage } from '../mainroute/mainroute';
 
+const checkAuth = (request: Request, env: Env) => {
+	const url = new URL(request.url);
+	const tokenParam = url.searchParams.get('token');
+	const authHeader = request.headers.get('Authorization');
+	const token = tokenParam || (authHeader ? authHeader.replace('Bearer ', '') : null);
+
+	if (!env.ADMIN_TOKEN || token !== env.ADMIN_TOKEN) {
+		return false;
+	}
+	return true;
+};
+
 export async function loader({ request, context }: Route.LoaderArgs) {
+	if (!checkAuth(request, context.cloudflare.env)) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
 	const accept = request.headers.get('Accept') || '';
 	const url = new URL(request.url);
 	const offset = parseInt(url.searchParams.get('offset') || '0');
@@ -34,6 +50,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
+	if (!checkAuth(request, context.cloudflare.env)) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
 	if (request.method === 'POST') {
 		try {
 			const body = await request.json() as { intent?: string; message?: Message };
