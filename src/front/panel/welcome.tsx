@@ -43,7 +43,7 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
 					}
 				});
 				return Array.from(map.values()).sort((a, b) =>
-					new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime()
+					Number(b.processed_at) - Number(a.processed_at)
 				);
 			});
 		} catch (e) {
