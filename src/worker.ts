@@ -62,7 +62,6 @@ export default {
 			const result: R2Objects = await env.CFGATEWAY.list({ cursor });
 			for (const object of result.objects) {
 				if (now - object.uploaded.getTime() > maxAgeMs) {
-					console.log(`Deleting old file: ${object.key}`);
 					await env.CFGATEWAY.delete(object.key);
 				}
 			}
@@ -76,67 +75,71 @@ export default {
 	async queue(batch, env): Promise<void> {
 		if (batch.messages.length === 0) return;
 		if (batch.queue === 'mqcfgateway-dlq') {
-			for (const rawmsg of batch.messages) {
-				try {
-					await MQStore(rawmsg, env, {
-						type: 'dlq'
-					});
-					rawmsg.ack();
-				} catch (e) {
-					console.error('MQDeadLetter error:', e);
-				}
-			}
+			await Promise.allSettled(
+				batch.messages.map(async (rawmsg) => {
+					try {
+						await MQStore(rawmsg, env, {
+							type: 'dlq'
+						});
+						rawmsg.ack();
+					} catch (e) {
+						console.error('MQDeadLetter error:', e);
+					}
+				})
+			);
 			return;
 		}
-		for (const rawmsg of batch.messages) {
-			try {
-				
-				let msg = rawmsg.body as MQCFGATEWAYMessage;
-				
-				if (msg.type === 'in') {
+
+		await Promise.allSettled(
+			batch.messages.map(async (rawmsg) => {
+				try {
+					let msg = rawmsg.body as MQCFGATEWAYMessage;
 					
-					// Store
-					await env.MQCFGATEWAY.send({
-						...msg,
-						type: 'store'
-					} as MQCFGATEWAYMessage, {
-						contentType: 'json'
-					});
+					if (msg.type === 'in') {
+
+						// Store
+						await env.MQCFGATEWAY.send({
+							...msg,
+							type: 'store'
+						} as MQCFGATEWAYMessage, {
+							contentType: 'json'
+						});
+
+						await MQProc(rawmsg, env);
+
+					} else if (msg.type === 'store') {
+
+						await MQStore(rawmsg, env, {
+							type: 'in'
+						});
+
+					} else if (msg.type === 'callback') {
+
+						await MQCallback(rawmsg, env);
+
+					} else if (msg.type === 'out') {
+
+						await MQStore(rawmsg, env, {
+							type: 'callback'
+						});
+
+					} else if (msg.type === 'internal') {
+
+						await MQStore(rawmsg, env, {
+							type: 'internal'
+						});
+
+					} else {
+						await MQStore(rawmsg, env, {
+							type: 'lost'
+						});
+					}
 					
-					await MQProc(rawmsg, env);
-					
-				} else if (msg.type === 'store') {
-					
-					await MQStore(rawmsg, env, {
-						type: 'in'
-					});
-					
-				} else if (msg.type === 'callback') {
-					
-					await MQCallback(rawmsg, env);
-					
-				} else if (msg.type === 'out') {
-					
-					await MQStore(rawmsg, env, {
-						type: 'callback'
-					});
-					
-				} else if (msg.type === 'internal') {
-					
-					await MQStore(rawmsg, env, {
-						type: 'internal'
-					});
-					
-				} else {
-					await MQStore(rawmsg, env, {
-						type: 'lost'
-					});
+					rawmsg.ack();
+				} catch (e) {
+					// Vai pro DLQ
 				}
-				
-				rawmsg.ack();
-			} catch (e) {
-				// Vai pro DLQ
-			}
-		}
+			})
+		);
 	}
 } satisfies ExportedHandler<Env>;

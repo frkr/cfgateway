@@ -1,0 +1,18 @@
+--- test/mq/mqproc/MQProc.spec.ts
++++ test/mq/mqproc/MQProc.spec.ts
+@@ -62,8 +62,13 @@
+		}));
+
+		// Verify callback fetch
+-		// MQProc doesn't fetch the callback, it just drops a message onto the MQCFGATEWAY queue.
+-		// So we won't expect fetch for callback here.
++		// Verify D1 records
++		const { results } = await env.DB.prepare('SELECT * FROM messages').all();
++
++		const destinyRecord = results.find((r: any) => r.url === 'http://destiny.com');
++		expect(destinyRecord).toBeDefined();
++		expect(destinyRecord?.content).toBe('destiny response');
++		expect(destinyRecord?.id_parent).toBe('test-parent-id');
+	});
+
+	it('should trigger retry on fetch failure', async () => {

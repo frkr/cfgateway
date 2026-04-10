@@ -43,7 +43,17 @@ test.describe('Retry Button Functionality', () => {
     });
 
     console.log('Navigating to /panel');
-    await page.goto('/panel?token=change_me_in_production');
+    await page.goto('/panel');
+
+    // Wait for the auth modal and submit token
+    console.log('Waiting for auth modal');
+    const tokenInput = page.getByPlaceholder('Admin Token');
+    await expect(tokenInput).toBeVisible({ timeout: 15000 });
+    await tokenInput.fill('change_me_in_production');
+
+    console.log('Submitting token');
+    const authButton = page.getByRole('button', { name: 'Authenticate' });
+    await authButton.click();
 
     // Wait for the message to appear
     console.log('Waiting for message link');

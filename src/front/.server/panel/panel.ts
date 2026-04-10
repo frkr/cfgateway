@@ -4,10 +4,8 @@ import type { Message } from '@/database';
 import { storeMessage } from '../mainroute/mainroute';
 
 const checkAuth = (request: Request, env: Env) => {
-	const url = new URL(request.url);
-	const tokenParam = url.searchParams.get('token');
 	const authHeader = request.headers.get('Authorization');
-	const token = tokenParam || (authHeader ? authHeader.replace('Bearer ', '') : null);
+	const token = authHeader ? authHeader.replace('Bearer ', '') : null;
 
 	if (!env.ADMIN_TOKEN || token !== env.ADMIN_TOKEN) {
 		return false;
@@ -16,12 +14,18 @@ const checkAuth = (request: Request, env: Env) => {
 };
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-	if (!checkAuth(request, context.cloudflare.env)) {
-		return new Response('Unauthorized', { status: 401 });
-	}
-
 	const accept = request.headers.get('Accept') || '';
 	const url = new URL(request.url);
+	const isJsonRequest = accept.includes('application/json') || url.searchParams.has('json');
+
+	if (!checkAuth(request, context.cloudflare.env)) {
+		if (isJsonRequest) {
+			return new Response('Unauthorized', { status: 401 });
+		}
+		// For initial HTML page load, return an empty state telling frontend it needs auth
+		return { requireAuth: true, message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE, messages: [] };
+	}
+
 	const offset = parseInt(url.searchParams.get('offset') || '0');
 	const limit = parseInt(url.searchParams.get('limit') || '20');
 	
