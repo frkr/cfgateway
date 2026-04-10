@@ -1,7 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { Message } from '@/database';
+import { useNavigate, useParams, Link } from 'react-router';
 
-export function Welcome({ requireAuth, message, messages: initialMessages = [] }: { requireAuth?: boolean; message: string; messages?: Message[] }) {
+export function Welcome({ requireAuth, messages: initialMessages = [] }: { requireAuth?: boolean; message: string; messages?: Message[] }) {
+	const navigate = useNavigate();
+	const params = useParams();
+	const id_parent_param = params.id_parent;
+
 	const [messages, setMessages] = useState<Message[]>(initialMessages);
 	const [loading, setLoading] = useState(false);
 	const [showTokenModal, setShowTokenModal] = useState(false);
@@ -17,22 +22,21 @@ export function Welcome({ requireAuth, message, messages: initialMessages = [] }
 		if (loading) return;
 		if (observer.current) observer.current.disconnect();
 		observer.current = new IntersectionObserver(entries => {
-			if (entries[0].isIntersecting && hasMore) {
+			if (entries[0].isIntersecting && hasMore && !id_parent_param) {
 				setOffset(prevOffset => prevOffset + 20);
 			}
 		});
 		if (node) observer.current.observe(node);
-	}, [loading, hasMore]);
+	}, [loading, hasMore, id_parent_param]);
 	
 	useEffect(() => {
 		const storedToken = localStorage.getItem('admin_token');
 		if (requireAuth && !storedToken) {
 			setShowTokenModal(true);
 		} else if (storedToken && requireAuth) {
-			// If we have a token but initial load failed auth, try fetching with token
 			fetchMessages(0, false);
 		}
-	}, [requireAuth]);
+	}, [requireAuth, id_parent_param]);
 
 	const saveToken = () => {
 		if (tokenInput.trim()) {
@@ -48,7 +52,13 @@ export function Welcome({ requireAuth, message, messages: initialMessages = [] }
 			const storedToken = localStorage.getItem('admin_token');
 			const headers = new Headers();
 			if (storedToken) headers.set('Authorization', `Bearer ${storedToken}`);
-			const res = await fetch(`/panel/messages?offset=${currentOffset}&limit=20&json=1`, { headers });
+
+			let url = `/panel/messages?offset=${currentOffset}&limit=20&json=1`;
+			if (id_parent_param) {
+				url += `&id_parent=${id_parent_param}`;
+			}
+
+			const res = await fetch(url, { headers });
 			if (res.status === 401) {
 				localStorage.removeItem('admin_token');
 				setShowTokenModal(true);
@@ -57,21 +67,28 @@ export function Welcome({ requireAuth, message, messages: initialMessages = [] }
 			}
 			const data: { messages?: Message[] } = await res.json();
 			const newMessages = data.messages || [];
-			if (!isRefresh && newMessages.length < 20) {
+
+			if (id_parent_param) {
+				setMessages(newMessages);
 				setHasMore(false);
-			}
-			setMessages(prev => {
-				const combined = isRefresh ? [...newMessages, ...prev] : [...prev, ...newMessages];
-				const map = new Map();
-				combined.forEach(m => {
-					if (!map.has(m.id)) {
-						map.set(m.id, m);
-					}
+			} else {
+				if (!isRefresh && newMessages.length < 20) {
+					setHasMore(false);
+				}
+				setMessages(prev => {
+					const combined = isRefresh ? [...newMessages, ...prev] : [...prev, ...newMessages];
+					const map = new Map();
+					combined.forEach(m => {
+						const key = m.id || m.id_parent;
+						if (!map.has(key)) {
+							map.set(key, m);
+						}
+					});
+					return Array.from(map.values()).sort((a, b) =>
+						Number(b.processed_at) - Number(a.processed_at)
+					);
 				});
-				return Array.from(map.values()).sort((a, b) =>
-					Number(b.processed_at) - Number(a.processed_at)
-				);
-			});
+			}
 		} catch (e) {
 			console.error('Fetch error:', e);
 		}
@@ -79,17 +96,17 @@ export function Welcome({ requireAuth, message, messages: initialMessages = [] }
 	};
 	
 	useEffect(() => {
-		if (offset > 0 && offset > messages.length - 20) {
+		if (!id_parent_param && offset > 0 && offset > messages.length - 20) {
 			fetchMessages(offset);
 		}
-	}, [offset]);
+	}, [offset, id_parent_param]);
 	
 	useEffect(() => {
 		const interval = setInterval(() => {
 			fetchMessages(0, true);
 		}, 5000);
 		return () => clearInterval(interval);
-	}, []);
+	}, [id_parent_param]);
 	
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -104,16 +121,6 @@ export function Welcome({ requireAuth, message, messages: initialMessages = [] }
 		window.addEventListener('keydown', handleKeyDown);
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	}, [selectedMessage, retryResult]);
-	
-	// Will be used to get the path of the URL
-	const getPath = (urlStr: string) => {
-		try {
-			const url = new URL(urlStr);
-			return url.pathname + url.search;
-		} catch (e) {
-			return urlStr;
-		}
-	};
 	
 	const handleRetry = async () => {
 		if (!selectedMessage || retryLoading) return;
@@ -144,13 +151,28 @@ export function Welcome({ requireAuth, message, messages: initialMessages = [] }
 			setRetryLoading(false);
 		}
 	};
+
+	const formatDate = (ts: number) => {
+		const d = new Date(ts);
+		const pad = (n: number) => n.toString().padStart(2, '0');
+		return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+	};
 	
 	return (
 		<main className="min-h-screen bg-white dark:bg-gray-950 text-xs font-mono">
 			<header
 				className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 p-2 z-10 flex justify-between items-center shadow-sm">
 				<div className="flex items-center gap-4">
-					<h1 className="font-bold uppercase tracking-wider">CF Gateway Logs</h1>
+					<h1 className="font-bold uppercase tracking-wider flex items-center gap-2">
+						{id_parent_param && (
+							<Link to="/panel" className="text-blue-500 hover:underline">
+								<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+								</svg>
+							</Link>
+						)}
+						CF Gateway Logs
+					</h1>
 					<span className="text-gray-400">({messages.length} registros)</span>
 				</div>
 				{loading && <span className="animate-pulse text-blue-500 font-bold">LOADING...</span>}
@@ -160,15 +182,23 @@ export function Welcome({ requireAuth, message, messages: initialMessages = [] }
 				<div className="flex flex-col divide-y divide-gray-100 dark:divide-gray-900">
 					{messages.map((msg, index) => {
 						const isLast = messages.length === index + 1;
+						const isGrouped = !id_parent_param;
+
 						return (
 							<div
-								key={msg.id}
+								key={msg.id || msg.id_parent}
 								ref={isLast ? lastMessageElementRef : null}
-								onClick={() => setSelectedMessage(msg)}
-								className="flex justify-between items-center py-0.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer group"
+								onClick={() => {
+									if (isGrouped) {
+										window.open(`/panel/${msg.id_parent}`, '_blank');
+									} else {
+										setSelectedMessage(msg);
+									}
+								}}
+								className="flex justify-between items-center py-1 px-2 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer group"
 							>
-								<div className="flex items-center gap-2">
-									<span className={`${msg.lab ? 'text-amber-500' : 'text-gray-300'}`} title={msg.lab ? 'Lab' : 'Prod'}>
+								<div className="flex items-center gap-3 overflow-hidden">
+									<span className={`${msg.lab ? 'text-amber-500' : 'text-gray-300'} shrink-0`} title={msg.lab ? 'Lab' : 'Prod'}>
 										<svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
 										     strokeLinecap="round" strokeLinejoin="round">
 											<path
@@ -177,14 +207,31 @@ export function Welcome({ requireAuth, message, messages: initialMessages = [] }
 											<path d="M7 16h10" />
 										</svg>
 									</span>
-									<span className="truncate mr-4 text-gray-800 dark:text-gray-200 group-hover:text-blue-500"
-									      title={msg.url}>
-										{msg.url}
+									<span className="text-gray-400 shrink-0 tabular-nums">
+										{formatDate(msg.processed_at)}
+									</span>
+									{isGrouped && (
+										<span className="bg-gray-100 dark:bg-gray-800 px-1.5 rounded-full text-[10px] font-bold text-gray-500 shrink-0">
+											{msg.message_count}
+										</span>
+									)}
+									<span className="truncate text-gray-800 dark:text-gray-200 group-hover:text-blue-500"
+									      title={msg.url || 'N/A'}>
+										{msg.url || '---'}
 									</span>
 								</div>
-								<span className="text-gray-400 shrink-0 tabular-nums">
-                    {new Date(msg.processed_at).toLocaleString()}
-                </span>
+								<div className="flex items-center gap-2 shrink-0">
+									{!isGrouped && (
+										<span className={`px-1 rounded text-[9px] font-bold uppercase ${
+											msg.status === 'in' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+											msg.status === 'out' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+											msg.status === 'callback' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+											'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+										}`}>
+											{msg.status}
+										</span>
+									)}
+								</div>
 							</div>
 						);
 					})}
@@ -211,7 +258,7 @@ export function Welcome({ requireAuth, message, messages: initialMessages = [] }
 						<div className="flex justify-between items-start mb-4 border-b dark:border-gray-800 pb-2">
 							<div>
 								<h2 className="text-sm font-bold uppercase tracking-tighter">Request Details</h2>
-								<p className="text-[10px] text-gray-500 font-mono">{selectedMessage.id_parent}</p>
+								<p className="text-[10px] text-gray-500 font-mono">{selectedMessage.id}</p>
 							</div>
 							<button onClick={() => setSelectedMessage(null)}
 							        className="text-gray-500 hover:text-black dark:hover:text-white text-xl leading-none">&times;</button>
@@ -234,6 +281,10 @@ export function Welcome({ requireAuth, message, messages: initialMessages = [] }
 								<div>
 									<label className="text-[10px] uppercase text-gray-400 font-bold">Filename</label>
 									<p className="font-mono">{selectedMessage.filename}</p>
+								</div>
+								<div>
+									<label className="text-[10px] uppercase text-gray-400 font-bold">Parent ID</label>
+									<p className="font-mono">{selectedMessage.id_parent}</p>
 								</div>
 							</div>
 							<div>

@@ -13,7 +13,7 @@ const checkAuth = (request: Request, env: Env) => {
 	return true;
 };
 
-export async function loader({ request, context }: Route.LoaderArgs) {
+export async function loader({ request, context, params }: Route.LoaderArgs) {
 	const accept = request.headers.get('Accept') || '';
 	const url = new URL(request.url);
 	const isJsonRequest = accept.includes('application/json') || url.searchParams.has('json');
@@ -23,20 +23,35 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 			return new Response('Unauthorized', { status: 401 });
 		}
 		// For initial HTML page load, return an empty state telling frontend it needs auth
-		return { requireAuth: true, message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE, messages: [] };
+		return { requireAuth: true, message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE, messages: [], isGrouped: true };
 	}
 
+	const id_parent = params.id_parent || url.searchParams.get('id_parent');
 	const offset = parseInt(url.searchParams.get('offset') || '0');
 	const limit = parseInt(url.searchParams.get('limit') || '20');
 	
 	try {
-		const { results } = await context.cloudflare.env.DB.prepare(
-			database.selectMessagesPaged
-		).bind(limit, offset).run();
+		let results;
+		let isGrouped = false;
+
+		if (id_parent) {
+			const query = await context.cloudflare.env.DB.prepare(
+				database.selectMessagesByParent
+			).bind(id_parent).run();
+			results = query.results;
+		} else {
+			const query = await context.cloudflare.env.DB.prepare(
+				database.selectGroupedMessagesPaged
+			).bind(limit, offset).run();
+			results = query.results;
+			isGrouped = true;
+		}
 		
 		const data = {
 			message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE,
-			messages: results as unknown as Message[]
+			messages: results as unknown as Message[],
+			id_parent,
+			isGrouped
 		};
 		
 		if (accept.includes('application/json') || url.searchParams.has('json')) {
@@ -45,7 +60,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 		return data;
 	} catch (e) {
 		console.error('DB error:', e);
-		const data = { message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE, messages: [] };
+		const data = { message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE, messages: [], isGrouped: !id_parent };
 		if (accept.includes('application/json') || url.searchParams.has('json')) {
 			return Response.json(data);
 		}
@@ -72,5 +87,5 @@ export async function action({ request, context }: Route.ActionArgs) {
 		}
 	}
 	
-	return loader({ request, context } as Route.LoaderArgs);
+	return loader({ request, context, params: {} } as Route.LoaderArgs);
 }
