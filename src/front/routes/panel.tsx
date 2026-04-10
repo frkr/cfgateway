@@ -3,6 +3,7 @@ import type { Route } from "./+types/panel";
 import type { Message } from '@/database';
 
 interface LoaderData {
+  requireAuth?: boolean;
   message: string;
   messages: Message[];
 }
@@ -17,6 +18,6 @@ export function meta({}: Route.MetaArgs) {
 export {loader} from "../.server/panel/panel";
 
 export default function Panel({ loaderData }: Route.ComponentProps) {
-  const { message, messages } = loaderData as LoaderData;
-  return <Welcome message={message} messages={messages} />;
+  const { requireAuth, message, messages } = loaderData as LoaderData;
+  return <Welcome requireAuth={requireAuth} message={message} messages={messages} />;
 }
