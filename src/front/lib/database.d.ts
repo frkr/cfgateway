@@ -7,4 +7,5 @@ export interface Message {
 	processed_at: number;
 	status: string;
 	lab: boolean;
+	message_count?: number;
 }

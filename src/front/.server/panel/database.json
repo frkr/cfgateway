@@ -1,4 +1,6 @@
 {
   "selectMessages": "SELECT id, id_parent, url, filename, content, processed_at, status, lab FROM messages ORDER BY processed_at DESC LIMIT 50",
-  "selectMessagesPaged": "SELECT id, id_parent, url, filename, content, processed_at, status, lab FROM messages ORDER BY processed_at DESC LIMIT ? OFFSET ?"
+  "selectMessagesPaged": "SELECT id, id_parent, url, filename, content, processed_at, status, lab FROM messages ORDER BY processed_at DESC LIMIT ? OFFSET ?",
+  "selectGroupedMessagesPaged": "SELECT id_parent, MAX(processed_at) as processed_at, COUNT(*) as message_count, MAX(CASE WHEN status = 'in' THEN url END) as url, MAX(CASE WHEN status = 'in' THEN lab END) as lab FROM messages GROUP BY id_parent ORDER BY processed_at DESC LIMIT ? OFFSET ?",
+  "selectMessagesByParent": "SELECT m.id, m.id_parent, m.filename, m.content, m.processed_at, m.status, m.lab, (SELECT url FROM messages WHERE id_parent = m.id_parent AND status = 'in' LIMIT 1) as url FROM messages m WHERE m.id_parent = ? ORDER BY m.processed_at ASC"
 }
