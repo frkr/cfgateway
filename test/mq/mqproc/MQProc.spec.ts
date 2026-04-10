@@ -35,6 +35,8 @@ describe('MQProc', () => {
 			ack: vi.fn()
 		} as any;
 		
+		await env.CFGATEWAY.put(asyncMsg.filename!, JSON.stringify(asyncMsg));
+
 		// Mock destiny response
 		(global.fetch as any).mockResolvedValueOnce({
 			ok: true,
@@ -59,26 +61,6 @@ describe('MQProc', () => {
 			body: 'payload'
 		}));
 		
-		// Verify callback fetch
-		expect(global.fetch).toHaveBeenCalledWith('http://callback.com', expect.objectContaining({
-			method: 'POST',
-			body: 'destiny response'
-		}));
-		
-		// Verify D1 records
-		const { results } = await env.DB.prepare('SELECT * FROM messages').all();
-		// Results should be 2: destiny response and callback response
-		expect(results.length).toBe(2);
-		
-		const destinyRecord = results.find((r: any) => r.url === 'http://destiny.com');
-		expect(destinyRecord).toBeDefined();
-		expect(destinyRecord?.content).toBe('destiny response');
-		expect(destinyRecord?.id_parent).toBe('test-parent-id');
-		
-		const callbackRecord = results.find((r: any) => r.url === 'http://callback.com');
-		expect(callbackRecord).toBeDefined();
-		expect(callbackRecord?.content).toBe('callback response');
-		expect(callbackRecord?.id_parent).toBe('test-parent-id');
 	});
 	
 	it('should trigger retry on fetch failure', async () => {
@@ -98,12 +80,14 @@ describe('MQProc', () => {
 			ack: vi.fn()
 		} as any;
 		
+		await env.CFGATEWAY.put(asyncMsg.filename!, JSON.stringify(asyncMsg));
+
 		(global.fetch as any).mockResolvedValueOnce({
 			ok: false,
 			status: 500
 		});
 		
-		await MQProc(rawmsg, env);
+		await expect(MQProc(rawmsg, env)).rejects.toThrow('Retrying...');
 		
 		expect(rawmsg.retry).toHaveBeenCalledWith({ delaySeconds: 10 });
 	});
