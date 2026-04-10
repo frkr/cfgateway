@@ -190,7 +190,7 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 								ref={isLast ? lastMessageElementRef : null}
 								onClick={() => {
 									if (isGrouped) {
-										navigate(`/panel/${msg.id_parent}`);
+										window.open(`/panel/${msg.id_parent}`, '_blank');
 									} else {
 										setSelectedMessage(msg);
 									}
@@ -210,6 +210,11 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 									<span className="text-gray-400 shrink-0 tabular-nums">
 										{formatDate(msg.processed_at)}
 									</span>
+									{isGrouped && (
+										<span className="bg-gray-100 dark:bg-gray-800 px-1.5 rounded-full text-[10px] font-bold text-gray-500 shrink-0">
+											{msg.message_count}
+										</span>
+									)}
 									<span className="truncate text-gray-800 dark:text-gray-200 group-hover:text-blue-500"
 									      title={msg.url || 'N/A'}>
 										{msg.url || '---'}
@@ -224,11 +229,6 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 											'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
 										}`}>
 											{msg.status}
-										</span>
-									)}
-									{isGrouped && (
-										<span className="bg-gray-100 dark:bg-gray-800 px-1.5 rounded-full text-[10px] font-bold text-gray-500">
-											{msg.message_count}
 										</span>
 									)}
 								</div>
