@@ -62,7 +62,6 @@ export default {
 			const result: R2Objects = await env.CFGATEWAY.list({ cursor });
 			for (const object of result.objects) {
 				if (now - object.uploaded.getTime() > maxAgeMs) {
-					console.log(`Deleting old file: ${object.key}`);
 					await env.CFGATEWAY.delete(object.key);
 				}
 			}
