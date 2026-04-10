@@ -33,6 +33,15 @@ async function handleRequest(request: Request, env: Env, lab = false) {
 		const content = await request.text();
 		
 		if (!isEmpty(content) && content.length > 10) {
+			if (request.url.includes('/async') && request.headers.get('Authorization')) {
+				const bearer = request.headers.get('Authorization');
+				if (bearer !== env.ADMIN_TOKEN) {
+					throw new Error('Invalid bearer token for /async path.');
+				}
+				await storeMessage(content, request.url, env, lab);
+			} else {
+				throw new Error('Invalid request for /async path without authentication bearer.');
+			}
 			await storeMessage(content, request.url, env, lab);
 		} else {
 			throw new Error('Content is empty or too short.');
