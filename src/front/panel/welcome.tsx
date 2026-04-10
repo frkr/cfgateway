@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Message } from '@/database';
 
-export function Welcome({ message, messages: initialMessages = [] }: { message: string; messages?: Message[] }) {
+export function Welcome({ requireAuth, message, messages: initialMessages = [] }: { requireAuth?: boolean; message: string; messages?: Message[] }) {
 	const [messages, setMessages] = useState<Message[]>(initialMessages);
 	const [loading, setLoading] = useState(false);
+	const [showTokenModal, setShowTokenModal] = useState(false);
+	const [tokenInput, setTokenInput] = useState('');
 	const [offset, setOffset] = useState(initialMessages.length);
 	const [hasMore, setHasMore] = useState(initialMessages.length >= 20);
 	const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -22,13 +24,37 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
 		if (node) observer.current.observe(node);
 	}, [loading, hasMore]);
 	
+	useEffect(() => {
+		const storedToken = localStorage.getItem('admin_token');
+		if (requireAuth && !storedToken) {
+			setShowTokenModal(true);
+		} else if (storedToken && requireAuth) {
+			// If we have a token but initial load failed auth, try fetching with token
+			fetchMessages(0, false);
+		}
+	}, [requireAuth]);
+
+	const saveToken = () => {
+		if (tokenInput.trim()) {
+			localStorage.setItem('admin_token', tokenInput.trim());
+			setShowTokenModal(false);
+			fetchMessages(0, false);
+		}
+	};
+
 	const fetchMessages = async (currentOffset: number, isRefresh = false) => {
 		if (!isRefresh) setLoading(true);
 		try {
-			const tokenParam = new URLSearchParams(window.location.search).get('token');
+			const storedToken = localStorage.getItem('admin_token');
 			const headers = new Headers();
-			if (tokenParam) headers.set('Authorization', `Bearer ${tokenParam}`);
+			if (storedToken) headers.set('Authorization', `Bearer ${storedToken}`);
 			const res = await fetch(`/panel/messages?offset=${currentOffset}&limit=20&json=1`, { headers });
+			if (res.status === 401) {
+				localStorage.removeItem('admin_token');
+				setShowTokenModal(true);
+				if (!isRefresh) setLoading(false);
+				return;
+			}
 			const data: { messages?: Message[] } = await res.json();
 			const newMessages = data.messages || [];
 			if (!isRefresh && newMessages.length < 20) {
@@ -93,11 +119,11 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
 		if (!selectedMessage || retryLoading) return;
 		setRetryLoading(true);
 		try {
-			const tokenParam = new URLSearchParams(window.location.search).get('token');
+			const storedToken = localStorage.getItem('admin_token');
 			const headers: Record<string, string> = {
 				'Content-Type': 'application/json'
 			};
-			if (tokenParam) headers['Authorization'] = `Bearer ${tokenParam}`;
+			if (storedToken) headers['Authorization'] = `Bearer ${storedToken}`;
 			const res = await fetch('/panel/messages', {
 				method: 'POST',
 				headers,
@@ -252,6 +278,30 @@ export function Welcome({ message, messages: initialMessages = [] }: { message: 
 							className="w-full py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-[10px] font-bold uppercase transition-colors"
 						>
 							OK
+						</button>
+					</div>
+				</div>
+			)}
+
+			{showTokenModal && (
+				<div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-md">
+					<div className="bg-white dark:bg-gray-900 p-6 rounded border border-gray-200 dark:border-gray-800 max-w-sm w-full shadow-2xl">
+						<h2 className="text-lg font-bold uppercase tracking-wider mb-4">Authentication Required</h2>
+						<p className="text-gray-500 mb-4 text-xs">Please enter your admin token to access the gateway logs.</p>
+						<input
+							type="password"
+							value={tokenInput}
+							onChange={(e) => setTokenInput(e.target.value)}
+							onKeyDown={(e) => e.key === 'Enter' && saveToken()}
+							placeholder="Admin Token"
+							className="w-full p-2 mb-4 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+							autoFocus
+						/>
+						<button
+							onClick={saveToken}
+							className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-bold uppercase transition-colors"
+						>
+							Authenticate
 						</button>
 					</div>
 				</div>

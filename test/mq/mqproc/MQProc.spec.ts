@@ -27,6 +27,9 @@ describe('MQProc', () => {
 			method: 'POST',
 			contentType: 'application/json'
 		};
+
+		// Mock R2 get
+		await env.CFGATEWAY.put('20244412000-test-id.txt', JSON.stringify(asyncMsg));
 		
 		const rawmsg = {
 			body: asyncMsg,
@@ -75,6 +78,9 @@ describe('MQProc', () => {
 			type: 'process',
 			destiny: 'http://destiny.com'
 		};
+
+		// Mock R2 get
+		await env.CFGATEWAY.put('20244412000-test-id.txt', JSON.stringify(asyncMsg));
 		
 		const rawmsg = {
 			body: asyncMsg,
@@ -93,7 +99,9 @@ describe('MQProc', () => {
 		
 		try {
 			await MQProc(rawmsg, env);
-		} catch (e) {}
+		} catch (e) {
+			// Catch error thrown when retrying
+		}
 		
 		expect(rawmsg.retry).toHaveBeenCalledWith({ delaySeconds: 10 });
 	});
