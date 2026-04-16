@@ -2,24 +2,14 @@ import type { Route } from '../../routes/+types/panel';
 import database from './database.json';
 import type { Message } from '@/database';
 import { storeMessage } from '../mainroute/mainroute';
-
-const checkAuth = (request: Request, env: Env) => {
-	const authHeader = request.headers.get('Authorization');
-	const token = authHeader ? authHeader.replace('Bearer ', '') : null;
-
-	if (!env.ADMIN_TOKEN || token !== env.ADMIN_TOKEN) {
-		return false;
-	}
-	return true;
-};
+import { checkAdminAuth, isJsonRequest } from './auth';
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-	const accept = request.headers.get('Accept') || '';
 	const url = new URL(request.url);
-	const isJsonRequest = accept.includes('application/json') || url.searchParams.has('json');
+	const wantsJson = isJsonRequest(request);
 
-	if (!checkAuth(request, context.cloudflare.env)) {
-		if (isJsonRequest) {
+	if (!checkAdminAuth(request, context.cloudflare.env)) {
+		if (wantsJson) {
 			return new Response('Unauthorized', { status: 401 });
 		}
 		// For initial HTML page load, return an empty state telling frontend it needs auth
@@ -54,14 +44,14 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 			isGrouped
 		};
 		
-		if (accept.includes('application/json') || url.searchParams.has('json')) {
+		if (wantsJson) {
 			return Response.json(data);
 		}
 		return data;
 	} catch (e) {
 		console.error('DB error:', e);
 		const data = { message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE, messages: [], isGrouped: !id_parent };
-		if (accept.includes('application/json') || url.searchParams.has('json')) {
+		if (wantsJson) {
 			return Response.json(data);
 		}
 		return data;
@@ -69,7 +59,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-	if (!checkAuth(request, context.cloudflare.env)) {
+	if (!checkAdminAuth(request, context.cloudflare.env)) {
 		return new Response('Unauthorized', { status: 401 });
 	}
 

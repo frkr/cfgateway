@@ -33,4 +33,67 @@ describe("mainroute", () => {
 
 		expect(response.status).toBe(422);
 	});
+	
+	it("accepts public dynamic paths without authorization", async () => {
+		const mockEnv = {
+			...env,
+			CFGATEWAY: {
+				put: vi.fn().mockResolvedValue(null)
+			},
+			MQCFGATEWAY: {
+				send: vi.fn().mockResolvedValue(undefined)
+			}
+		};
+		const request = new Request("http://example.com/davi", {
+			method: "POST",
+			body: "test content that is long enough",
+		});
+		const context = {
+			cloudflare: {
+				env: mockEnv
+			}
+		};
+		
+		const response = await action({ request, context } as any);
+		
+		expect(response.status).toBe(201);
+		expect(mockEnv.CFGATEWAY.put).toHaveBeenCalledOnce();
+		expect(mockEnv.MQCFGATEWAY.send).toHaveBeenCalledOnce();
+		expect(mockEnv.MQCFGATEWAY.send).toHaveBeenCalledWith(expect.objectContaining({
+			url: "http://example.com/davi",
+			type: "in"
+		}), expect.objectContaining({
+			contentType: "json"
+		}));
+	});
+	
+	it("keeps /async protected by the admin token", async () => {
+		const mockEnv = {
+			...env,
+			ADMIN_TOKEN: "supersecret",
+			CFGATEWAY: {
+				put: vi.fn().mockResolvedValue(null)
+			},
+			MQCFGATEWAY: {
+				send: vi.fn().mockResolvedValue(undefined)
+			}
+		};
+		const request = new Request("http://example.com/async", {
+			method: "POST",
+			body: "test content that is long enough",
+		});
+		const context = {
+			cloudflare: {
+				env: mockEnv
+			}
+		};
+		
+		const responsePromise = action({ request, context } as any);
+		await vi.runAllTimersAsync();
+		const response = await responsePromise;
+		
+		expect(response.status).toBe(422);
+		expect(mockEnv.CFGATEWAY.put).not.toHaveBeenCalled();
+		expect(mockEnv.MQCFGATEWAY.send).not.toHaveBeenCalled();
+	});
 });

@@ -2,17 +2,23 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { Message } from '@/database';
 import { useNavigate, useParams, Link } from 'react-router';
 
-export function Welcome({ requireAuth, messages: initialMessages = [] }: { requireAuth?: boolean; message: string; messages?: Message[] }) {
+export function Welcome({ requireAuth, messages: initialMessages = [] }: {
+	requireAuth?: boolean;
+	message: string;
+	messages?: Message[]
+}) {
 	const navigate = useNavigate();
 	const params = useParams();
 	const id_parent_param = params.id_parent;
-
+	
 	const [messages, setMessages] = useState<Message[]>(initialMessages);
 	const [loading, setLoading] = useState(false);
 	const [showTokenModal, setShowTokenModal] = useState(false);
 	const [tokenInput, setTokenInput] = useState('');
 	const [offset, setOffset] = useState(initialMessages.length);
 	const [hasMore, setHasMore] = useState(initialMessages.length >= 20);
+	const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(initialMessages.length > 0 ? Date.now() : null);
+	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 	const [retryLoading, setRetryLoading] = useState(false);
 	const [retryResult, setRetryResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -37,7 +43,7 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 			fetchMessages(0, false);
 		}
 	}, [requireAuth, id_parent_param]);
-
+	
 	const saveToken = () => {
 		if (tokenInput.trim()) {
 			localStorage.setItem('admin_token', tokenInput.trim());
@@ -45,29 +51,31 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 			fetchMessages(0, false);
 		}
 	};
-
+	
 	const fetchMessages = async (currentOffset: number, isRefresh = false) => {
 		if (!isRefresh) setLoading(true);
+		if (isRefresh) setIsRefreshing(true);
 		try {
 			const storedToken = localStorage.getItem('admin_token');
 			const headers = new Headers();
 			if (storedToken) headers.set('Authorization', `Bearer ${storedToken}`);
-
+			
 			let url = `/panel/messages?offset=${currentOffset}&limit=20&json=1`;
 			if (id_parent_param) {
 				url += `&id_parent=${id_parent_param}`;
 			}
-
+			
 			const res = await fetch(url, { headers });
 			if (res.status === 401) {
 				localStorage.removeItem('admin_token');
 				setShowTokenModal(true);
 				if (!isRefresh) setLoading(false);
+				if (isRefresh) setIsRefreshing(false);
 				return;
 			}
 			const data: { messages?: Message[] } = await res.json();
 			const newMessages = data.messages || [];
-
+			
 			if (id_parent_param) {
 				setMessages(newMessages);
 				setHasMore(false);
@@ -89,10 +97,14 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 					);
 				});
 			}
+			setLastUpdatedAt(Date.now());
 		} catch (e) {
 			console.error('Fetch error:', e);
 		}
 		if (!isRefresh) setLoading(false);
+		if (isRefresh) {
+			window.setTimeout(() => setIsRefreshing(false), 600);
+		}
 	};
 	
 	useEffect(() => {
@@ -151,7 +163,7 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 			setRetryLoading(false);
 		}
 	};
-
+	
 	const formatDate = (ts: number) => {
 		const d = new Date(ts);
 		const pad = (n: number) => n.toString().padStart(2, '0');
@@ -173,7 +185,20 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 						)}
 						CF Gateway Logs
 					</h1>
+					<Link to="/panel/paths" className="text-blue-500 hover:underline uppercase font-bold">
+						Paths
+					</Link>
 					<span className="text-gray-400">({messages.length} registros)</span>
+					<div className="flex items-center gap-2 text-[10px] uppercase">
+						<span className={`font-bold ${isRefreshing ? 'text-blue-500 animate-pulse' : 'text-gray-400'}`}>
+							Auto-refresh 5s
+						</span>
+						{lastUpdatedAt && (
+							<span className="text-gray-400 normal-case">
+								updated {formatDate(lastUpdatedAt)}
+							</span>
+						)}
+					</div>
 				</div>
 				{loading && <span className="animate-pulse text-blue-500 font-bold">LOADING...</span>}
 			</header>
@@ -183,7 +208,7 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 					{messages.map((msg, index) => {
 						const isLast = messages.length === index + 1;
 						const isGrouped = !id_parent_param;
-
+						
 						return (
 							<div
 								key={msg.id || msg.id_parent}
@@ -198,7 +223,8 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 								className="flex justify-between items-center py-1 px-2 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer group"
 							>
 								<div className="flex items-center gap-3 overflow-hidden">
-									<span className={`${msg.lab ? 'text-amber-500' : 'text-gray-300'} shrink-0`} title={msg.lab ? 'Lab' : 'Prod'}>
+									<span className={`${msg.lab ? 'text-amber-500' : 'text-gray-300'} shrink-0`}
+									      title={msg.lab ? 'Lab' : 'Prod'}>
 										<svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
 										     strokeLinecap="round" strokeLinejoin="round">
 											<path
@@ -211,7 +237,8 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 										{formatDate(msg.processed_at)}
 									</span>
 									{isGrouped && (
-										<span className="bg-gray-100 dark:bg-gray-800 px-1.5 rounded-full text-[10px] font-bold text-gray-500 shrink-0">
+										<span
+											className="bg-gray-100 dark:bg-gray-800 px-1.5 rounded-full text-[10px] font-bold text-gray-500 shrink-0">
 											{msg.message_count}
 										</span>
 									)}
@@ -224,9 +251,9 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 									{!isGrouped && (
 										<span className={`px-1 rounded text-[9px] font-bold uppercase ${
 											msg.status === 'in' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-											msg.status === 'out' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-											msg.status === 'callback' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
-											'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+												msg.status === 'out' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+													msg.status === 'callback' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+														'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
 										}`}>
 											{msg.status}
 										</span>
@@ -258,7 +285,7 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 						<div className="flex justify-between items-start mb-4 border-b dark:border-gray-800 pb-2">
 							<div>
 								<h2 className="text-sm font-bold uppercase tracking-tighter">Request Details</h2>
-								<p className="text-[10px] text-gray-500 font-mono">{selectedMessage.id}</p>
+								<p className="text-[10px] text-gray-500 font-mono">{selectedMessage.id_parent}</p>
 							</div>
 							<button onClick={() => setSelectedMessage(null)}
 							        className="text-gray-500 hover:text-black dark:hover:text-white text-xl leading-none">&times;</button>
@@ -282,10 +309,6 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 									<label className="text-[10px] uppercase text-gray-400 font-bold">Filename</label>
 									<p className="font-mono">{selectedMessage.filename}</p>
 								</div>
-								<div>
-									<label className="text-[10px] uppercase text-gray-400 font-bold">Parent ID</label>
-									<p className="font-mono">{selectedMessage.id_parent}</p>
-								</div>
 							</div>
 							<div>
 								<label className="text-[10px] uppercase text-gray-400 font-bold">Content</label>
@@ -297,13 +320,13 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 						</div>
 						<div className="mt-4 pt-2 border-t dark:border-gray-800 flex justify-end gap-2">
 							{(selectedMessage.status === 'in' || selectedMessage.status === 'callback') && (
-							<button
-								onClick={handleRetry}
-								disabled={retryLoading}
-								className="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400 rounded text-[10px] font-bold uppercase flex items-center gap-2"
-							>
-								{retryLoading ? 'Sending...' : 'Retry'}
-							</button>
+								<button
+									onClick={handleRetry}
+									disabled={retryLoading}
+									className="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400 rounded text-[10px] font-bold uppercase flex items-center gap-2"
+								>
+									{retryLoading ? 'Sending...' : 'Retry'}
+								</button>
 							)}
 							<button
 								onClick={() => setSelectedMessage(null)}
@@ -333,10 +356,11 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: { requi
 					</div>
 				</div>
 			)}
-
+			
 			{showTokenModal && (
 				<div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-md">
-					<div className="bg-white dark:bg-gray-900 p-6 rounded border border-gray-200 dark:border-gray-800 max-w-sm w-full shadow-2xl">
+					<div
+						className="bg-white dark:bg-gray-900 p-6 rounded border border-gray-200 dark:border-gray-800 max-w-sm w-full shadow-2xl">
 						<h2 className="text-lg font-bold uppercase tracking-wider mb-4">Authentication Required</h2>
 						<p className="text-gray-500 mb-4 text-xs">Please enter your admin token to access the gateway logs.</p>
 						<input

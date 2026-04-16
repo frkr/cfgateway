@@ -178,3 +178,4 @@ tsconfig.node.tsbuildinfo
 # Playwright
 playwright-report/
 test-results/
+.pnpm-store/

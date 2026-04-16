@@ -7,12 +7,20 @@ Content-Type: application/json
 }
 
 ### Async
-POST https://cfgateway.casaid.workers.dev/async/40
+POST https://cfgateway.casaid.workers.dev/async/66
 Content-Type: application/json
+Authorization: Bearer change_me_in_production
 
 {
   "methodDestiny": "GET",
   "destiny": "https://github.com/frkr",
-  "callback": "https://cfgateway.casaid.workers.dev/store/41"
+  "callback": "https://cfgateway.casaid.workers.dev/store/67"
 }
 
+### Path novo
+POST https://cfgateway.casaid.workers.dev/davi
+Content-Type: application/json
+
+{
+  "message": "Teste125"
+}

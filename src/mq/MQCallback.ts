@@ -76,7 +76,10 @@ export default async function(rawmsg: Message<unknown>, env: Env) {
 			rawmsg.retry({ delaySeconds: 10 });
 			throw new Error('Retrying...');
 		} else {
-			throw error; // Let it go to DLQ
+			await MQStore(rawmsg, env, {
+				type: 'error',
+				resettime: true
+			});
 		}
 	}
 }

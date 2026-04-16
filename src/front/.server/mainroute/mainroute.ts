@@ -31,17 +31,18 @@ export async function storeMessage(content: string, url: string, env: Env, lab =
 async function handleRequest(request: Request, env: Env, lab = false) {
 	try {
 		const content = await request.text();
+		const { pathname } = new URL(request.url);
 		
 		if (!isEmpty(content) && content.length > 10) {
-			if (request.url.includes('/async') && request.headers.get('Authorization')) {
+			if (pathname.startsWith('/async')) {
 				const bearer = request.headers.get('Authorization');
-				if (bearer !== env.ADMIN_TOKEN) {
+				const token = bearer ? bearer.replace('Bearer ', '') : null;
+				
+				if (!token || token !== env.ADMIN_TOKEN) {
 					throw new Error('Invalid bearer token for /async path.');
 				}
-				await storeMessage(content, request.url, env, lab);
-			} else {
-				throw new Error('Invalid request for /async path without authentication bearer.');
 			}
+			
 			await storeMessage(content, request.url, env, lab);
 		} else {
 			throw new Error('Content is empty or too short.');
