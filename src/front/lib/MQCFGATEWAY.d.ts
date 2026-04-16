@@ -13,10 +13,13 @@ export type MQCFGATEWAYMessage = {
 }
 
 export type MQCFGATEWAYMessageAsync = {
-	content?: string;
-	destiny?: string;
-	callback?: string;
-	method?: string;
-	contentType?: string;
-	headers?: Map<string, string>;
+	content?: string; // Content to send to destiny
+	destiny?: string; // URL to send it
+	callback?: string; // URL to send the response from Destiny
+	methodDestiny?: string; // HTTP method to use to Destiny
+	methodCallback?: string; // HTTP method to use to Callback
+	contentTypeDestiny?: string; // Content-Type header to use to Destiny
+	contentTypeCallback?: string; // Content-Type header to use to Callback
+	headersDestiny?: Map<string, string>; // Headers to send to Destiny
+	headersCallback?: Map<string, string>; // Headers to send to Callback
 };

@@ -24,8 +24,8 @@ describe('MQProc', () => {
 			destiny: 'http://destiny.com',
 			content: 'payload',
 			callback: 'http://callback.com',
-			method: 'POST',
-			contentType: 'application/json'
+			methodDestiny: 'POST',
+			contentTypeDestiny: 'application/json'
 		};
 
 		// Mock R2 get

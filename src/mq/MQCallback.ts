@@ -29,17 +29,17 @@ export default async function(rawmsg: Message<unknown>, env: Env) {
 	
 	try {
 		let headers = new Headers();
-		if (asyncContent.headers) {
-			for (let [key, value] of Object.entries(asyncContent.headers)) {
+		if (asyncContent.headersCallback) {
+			for (let [key, value] of Object.entries(asyncContent.headersCallback)) {
 				headers.set(key, value);
 			}
 		}
-		if (asyncContent.contentType) {
-			headers.set('Content-Type', asyncContent.contentType);
+		if (asyncContent.contentTypeCallback) {
+			headers.set('Content-Type', asyncContent.contentTypeCallback);
 		}
 		
 		let callbackResponse = await fetch(asyncContent.callback, {
-			method: 'POST',
+			method: asyncContent.methodCallback || 'POST',
 			headers: headers,
 			body: asyncContent.content || null
 		});

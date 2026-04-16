@@ -29,17 +29,17 @@ export default async function(rawmsg: Message<unknown>, env: Env) {
 	
 	try {
 		let headers = new Headers();
-		if (asyncContent.headers) {
-			for (let [key, value] of Object.entries(asyncContent.headers)) {
+		if (asyncContent.headersDestiny) {
+			for (let [key, value] of Object.entries(asyncContent.headersDestiny)) {
 				headers.set(key, value);
 			}
 		}
-		if (asyncContent.contentType) {
-			headers.set('Content-Type', asyncContent.contentType);
+		if (asyncContent.contentTypeDestiny) {
+			headers.set('Content-Type', asyncContent.contentTypeDestiny);
 		}
 		
 		let destinyResponse = await fetch(asyncContent.destiny, {
-			method: asyncContent.method || 'POST',
+			method: asyncContent.methodDestiny || 'POST',
 			headers: headers,
 			body: asyncContent.content || null
 		});
