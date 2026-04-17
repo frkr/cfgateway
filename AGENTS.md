@@ -15,6 +15,7 @@
 - O Arquivo de inicialização "src/front/routes" deve conter apenas um facade para referenciar funcoes externas. Use o exemplo "mainroute.ts" e o "panel.tsx" para entender como fazer.
 - Os modulos do backend devem ficar em "src/front/.server" use de exemplo o Panel: "src/front/.server/panel"
 - Os modulos para a Message Queue devem ficar em "src/mq", use o "mqstore" como exemplo
+- Ao criar ou modificar testes unitários, os resultados da execução desses testes devem ser incluídos no corpo do pull request. No entanto, arquivos `.log` ou `.txt` (como `pr_comments.txt` ou saídas de log) usados para armazenar temporariamente esses resultados NÃO devem ser "comitados", para não sujar o histórico do git.
 
 # Cloudflare Workers - Agents Section
 
