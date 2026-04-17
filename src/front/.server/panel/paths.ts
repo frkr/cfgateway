@@ -100,7 +100,8 @@ function validatePayload(payload: PathRoutePayload) {
 export async function loader({ request, context }: Route.LoaderArgs) {
 	const wantsJson = isJsonRequest(request);
 	
-	if (!checkAdminAuth(request, context.cloudflare.env)) {
+	const isAuthed = await checkAdminAuth(request, context.cloudflare.env);
+	if (!isAuthed) {
 		if (wantsJson) {
 			return new Response('Unauthorized', { status: 401 });
 		}
@@ -130,7 +131,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-	if (!checkAdminAuth(request, context.cloudflare.env)) {
+	const isAuthed = await checkAdminAuth(request, context.cloudflare.env);
+	if (!isAuthed) {
 		return new Response('Unauthorized', { status: 401 });
 	}
 	
