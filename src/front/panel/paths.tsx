@@ -120,41 +120,23 @@ export default function PathsPanel({ loaderData }: Route.ComponentProps) {
 	const methodOptions = useMemo(() => methods.length > 0 ? methods : [...PATH_ROUTE_METHODS], [methods]);
 	
 	useEffect(() => {
-		const storedToken = localStorage.getItem('admin_token');
-		
-		if (requireAuth && !storedToken) {
+		if (requireAuth) {
 			setShowTokenModal(true);
 			return;
 		}
 		
-		if (storedToken) {
-			void fetchRoutes();
-		}
+		void fetchRoutes();
 	}, [requireAuth]);
-	
-	const withAuthHeaders = () => {
-		const storedToken = localStorage.getItem('admin_token');
-		const headers = new Headers({
-			'Content-Type': 'application/json'
-		});
-		
-		if (storedToken) {
-			headers.set('Authorization', `Bearer ${storedToken}`);
-		}
-		
-		return headers;
-	};
 	
 	const fetchRoutes = async () => {
 		setLoading(true);
 		
 		try {
 			const response = await fetch('/panel/paths/data?json=1', {
-				headers: withAuthHeaders()
+				headers: { 'Content-Type': 'application/json' }
 			});
 			
 			if (response.status === 401) {
-				localStorage.removeItem('admin_token');
 				setShowTokenModal(true);
 				return;
 			}
@@ -169,14 +151,26 @@ export default function PathsPanel({ loaderData }: Route.ComponentProps) {
 		}
 	};
 	
-	const saveToken = () => {
+	const saveToken = async () => {
 		if (!tokenInput.trim()) {
 			return;
 		}
 		
-		localStorage.setItem('admin_token', tokenInput.trim());
-		setShowTokenModal(false);
-		void fetchRoutes();
+		try {
+			const res = await fetch('/panel', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ intent: 'login', token: tokenInput.trim() })
+			});
+			if (res.ok) {
+				setShowTokenModal(false);
+				void fetchRoutes();
+			} else {
+				console.error('Login failed');
+			}
+		} catch (e) {
+			console.error('Login error', e);
+		}
 	};
 	
 	const resetForm = () => {
@@ -191,7 +185,7 @@ export default function PathsPanel({ loaderData }: Route.ComponentProps) {
 		try {
 			const response = await fetch('/panel/paths/data?json=1', {
 				method: 'POST',
-				headers: withAuthHeaders(),
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					intent: 'save',
 					id: form.id,
@@ -211,7 +205,6 @@ export default function PathsPanel({ loaderData }: Route.ComponentProps) {
 			});
 			
 			if (response.status === 401) {
-				localStorage.removeItem('admin_token');
 				setShowTokenModal(true);
 				return;
 			}
@@ -239,7 +232,7 @@ export default function PathsPanel({ loaderData }: Route.ComponentProps) {
 		try {
 			const response = await fetch('/panel/paths/data?json=1', {
 				method: 'POST',
-				headers: withAuthHeaders(),
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					intent: 'delete',
 					id: route.id
@@ -247,7 +240,6 @@ export default function PathsPanel({ loaderData }: Route.ComponentProps) {
 			});
 			
 			if (response.status === 401) {
-				localStorage.removeItem('admin_token');
 				setShowTokenModal(true);
 				return;
 			}

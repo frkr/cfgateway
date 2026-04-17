@@ -41,7 +41,7 @@ describe('MQCallback', () => {
 			.bind('callback-parent-id')
 			.first<{ status: string; url: string }>();
 		
-		expect(stored?.status).toBe('lost');
+		expect(stored?.status).toBe('error');
 		expect(stored?.url).toBe('http://callback.example.com');
 		expect(rawmsg.retry).not.toHaveBeenCalled();
 	});

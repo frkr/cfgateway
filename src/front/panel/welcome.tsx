@@ -36,19 +36,29 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: {
 	}, [loading, hasMore, id_parent_param]);
 	
 	useEffect(() => {
-		const storedToken = localStorage.getItem('admin_token');
-		if (requireAuth && !storedToken) {
-			setShowTokenModal(true);
-		} else if (storedToken && requireAuth) {
-			fetchMessages(0, false);
-		}
-	}, [requireAuth, id_parent_param]);
+		if (requireAuth) {
+				setShowTokenModal(true);
+			}
+		}, [requireAuth, id_parent_param]);
 	
-	const saveToken = () => {
+	const saveToken = async () => {
 		if (tokenInput.trim()) {
-			localStorage.setItem('admin_token', tokenInput.trim());
-			setShowTokenModal(false);
-			fetchMessages(0, false);
+			try {
+				const res = await fetch('/panel', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ intent: 'login', token: tokenInput.trim() })
+				});
+				if (res.ok) {
+					setShowTokenModal(false);
+					fetchMessages(0, false);
+				} else {
+					console.error('Login failed');
+					// Option to show error to user
+				}
+			} catch (e) {
+				console.error('Login error', e);
+			}
 		}
 	};
 	
@@ -56,18 +66,13 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: {
 		if (!isRefresh) setLoading(true);
 		if (isRefresh) setIsRefreshing(true);
 		try {
-			const storedToken = localStorage.getItem('admin_token');
-			const headers = new Headers();
-			if (storedToken) headers.set('Authorization', `Bearer ${storedToken}`);
-			
 			let url = `/panel/messages?offset=${currentOffset}&limit=20&json=1`;
 			if (id_parent_param) {
 				url += `&id_parent=${id_parent_param}`;
 			}
 			
-			const res = await fetch(url, { headers });
+			const res = await fetch(url);
 			if (res.status === 401) {
-				localStorage.removeItem('admin_token');
 				setShowTokenModal(true);
 				if (!isRefresh) setLoading(false);
 				if (isRefresh) setIsRefreshing(false);
@@ -138,14 +143,9 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: {
 		if (!selectedMessage || retryLoading) return;
 		setRetryLoading(true);
 		try {
-			const storedToken = localStorage.getItem('admin_token');
-			const headers: Record<string, string> = {
-				'Content-Type': 'application/json'
-			};
-			if (storedToken) headers['Authorization'] = `Bearer ${storedToken}`;
 			const res = await fetch('/panel/messages', {
 				method: 'POST',
-				headers,
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					intent: 'retry',
 					message: selectedMessage

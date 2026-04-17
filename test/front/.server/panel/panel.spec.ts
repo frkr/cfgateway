@@ -124,7 +124,7 @@ describe('Panel Server Tests - Action', () => {
 	});
 
 	it('should return 401 Unauthorized without token', async () => {
-		const request = new Request('http://example.com/panel', { method: 'POST' });
+		const request = new Request('http://example.com/panel', { method: 'POST', body: JSON.stringify({ intent: 'retry' }) });
 		const context = {
 			cloudflare: {
 				env: {

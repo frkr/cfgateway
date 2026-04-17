@@ -2,13 +2,14 @@ import type { Route } from '../../routes/+types/panel';
 import database from './database.json';
 import type { Message } from '@/database';
 import { storeMessage } from '../mainroute/mainroute';
-import { checkAdminAuth, isJsonRequest } from './auth';
+import { checkAdminAuth, isJsonRequest, adminAuthCookie } from './auth';
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
 	const url = new URL(request.url);
 	const wantsJson = isJsonRequest(request);
 
-	if (!checkAdminAuth(request, context.cloudflare.env)) {
+	const isAuthed = await checkAdminAuth(request, context.cloudflare.env);
+	if (!isAuthed) {
 		if (wantsJson) {
 			return new Response('Unauthorized', { status: 401 });
 		}
@@ -59,13 +60,29 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-	if (!checkAdminAuth(request, context.cloudflare.env)) {
-		return new Response('Unauthorized', { status: 401 });
-	}
-
 	if (request.method === 'POST') {
 		try {
-			const body = await request.json() as { intent?: string; message?: Message };
+			const body = await request.json() as { intent?: string; message?: Message; token?: string };
+
+			if (body.intent === 'login') {
+				if (body.token === context.cloudflare.env.ADMIN_TOKEN) {
+					const cookieStr = await adminAuthCookie.serialize(body.token, {
+						secure: new URL(request.url).protocol === 'https:'
+					});
+					return Response.json({ success: true }, {
+						headers: {
+							'Set-Cookie': cookieStr
+						}
+					});
+				}
+				return Response.json({ success: false, error: 'Invalid token' }, { status: 401 });
+			}
+
+			const isAuthed = await checkAdminAuth(request, context.cloudflare.env);
+			if (!isAuthed) {
+				return new Response('Unauthorized', { status: 401 });
+			}
+
 			if (body.intent === 'retry' && body.message) {
 				const { message } = body;
 				await storeMessage(message.content, message.url, context.cloudflare.env, true);
@@ -77,5 +94,10 @@ export async function action({ request, context }: Route.ActionArgs) {
 		}
 	}
 	
+	const isAuthed = await checkAdminAuth(request, context.cloudflare.env);
+	if (!isAuthed) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
 	return loader({ request, context, params: {} } as Route.LoaderArgs);
 }

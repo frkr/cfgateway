@@ -23,6 +23,18 @@ test.describe('Retry Button Functionality', () => {
     await page.route('**/*', async (route) => {
       const url = route.request().url();
       const method = route.request().method();
+      if (url.includes('/panel') && method === 'POST') {
+        const postData = route.request().postDataJSON();
+        if (postData && postData.intent === 'login') {
+            console.log('Mocking POST login request:', url);
+            return route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                headers: { 'Set-Cookie': 'admin_token=fake_token; Path=/; HttpOnly' },
+                body: JSON.stringify({ success: true }),
+            });
+        }
+      }
       if (url.includes('/panel/messages') && method === 'GET') {
          console.log('Mocking GET data request:', url);
          return route.fulfill({
@@ -42,8 +54,8 @@ test.describe('Retry Button Functionality', () => {
       return route.continue();
     });
 
-    console.log('Navigating to /panel');
-    await page.goto('/panel');
+    console.log('Navigating to /panel/parent_1');
+    await page.goto('/panel/parent_1');
 
     // Wait for the auth modal and submit token
     console.log('Waiting for auth modal');

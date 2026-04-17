@@ -15,7 +15,7 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export {loader} from "../.server/panel/panel";
+export {loader, action} from "../.server/panel/panel";
 
 export default function Panel({ loaderData }: Route.ComponentProps) {
   const { requireAuth, message, messages } = loaderData as LoaderData;
