@@ -179,3 +179,7 @@ tsconfig.node.tsbuildinfo
 playwright-report/
 test-results/
 .pnpm-store/
+
+# PR comments / test logs
+pr_comment.txt
+pr_comments.txt
