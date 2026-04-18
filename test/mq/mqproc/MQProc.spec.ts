@@ -123,6 +123,7 @@ describe('MQProc', () => {
 				JSON.stringify({ Authorization: 'Bearer token' }),
 				JSON.stringify({ 'X-Callback': 'done' }),
 				1,
+				1,
 				Date.now(),
 				Date.now()
 			)

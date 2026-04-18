@@ -26,6 +26,7 @@ type PathRoutePayload = {
 	headersDestiny?: PathRouteHeaderEntry[];
 	headersCallback?: PathRouteHeaderEntry[];
 	enabled?: boolean;
+	isAsync?: boolean;
 };
 
 async function loadRoutes(env: Env) {
@@ -93,7 +94,8 @@ function validatePayload(payload: PathRoutePayload) {
 		contentTypeCallback: String(payload.contentTypeCallback || '').trim(),
 		headersDestiny: normalizeHeaders(payload.headersDestiny),
 		headersCallback: normalizeHeaders(payload.headersCallback),
-		enabled: payload.enabled !== false
+		enabled: payload.enabled !== false,
+		isAsync: payload.isAsync !== false
 	};
 }
 
@@ -168,6 +170,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 						toHeadersStorage(route.headersDestiny),
 						toHeadersStorage(route.headersCallback),
 						route.enabled ? 1 : 0,
+						route.isAsync ? 1 : 0,
 						now,
 						body.id
 					)
@@ -186,6 +189,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 						toHeadersStorage(route.headersDestiny),
 						toHeadersStorage(route.headersCallback),
 						route.enabled ? 1 : 0,
+						route.isAsync ? 1 : 0,
 						now,
 						now
 					)

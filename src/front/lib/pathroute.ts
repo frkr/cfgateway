@@ -22,6 +22,7 @@ export type PathRouteRow = {
 	headers_destiny: string | null;
 	headers_callback: string | null;
 	enabled: number;
+	is_async: number;
 	created_at: number;
 	updated_at: number;
 };
@@ -38,6 +39,7 @@ export type PathRoute = {
 	headersDestiny: PathRouteHeaderEntry[];
 	headersCallback: PathRouteHeaderEntry[];
 	enabled: boolean;
+	isAsync: boolean;
 	createdAt: number;
 	updatedAt: number;
 };
@@ -110,6 +112,7 @@ export function toPathRoute(row: PathRouteRow): PathRoute {
 		headersDestiny: parseHeaderEntries(row.headers_destiny),
 		headersCallback: parseHeaderEntries(row.headers_callback),
 		enabled: row.enabled === 1,
+		isAsync: row.is_async === 1,
 		createdAt: Number(row.created_at),
 		updatedAt: Number(row.updated_at)
 	};
@@ -124,7 +127,8 @@ export async function ensurePathRoutesTable(env: Env) {
 		database.alterAddContentTypeDestiny,
 		database.alterAddContentTypeCallback,
 		database.alterAddHeadersDestiny,
-		database.alterAddHeadersCallback
+		database.alterAddHeadersCallback,
+		database.alterAddIsAsync
 	]) {
 		try {
 			await env.DB.prepare(query).run();
