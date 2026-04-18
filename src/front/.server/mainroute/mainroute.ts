@@ -143,19 +143,28 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, 
 				return HTTP_CREATED();
 			}
 
-			// New Logic for Sync and DB-based routes
-			const isExplicitSync = pathname.startsWith('/sync/');
-			const searchPath = isExplicitSync ? pathname.substring(6) : pathname;
-			const normalizedPath = normalizePathKey(searchPath);
+			if (pathname.startsWith('/sync/')) {
+				const normalizedPath = normalizePathKey(pathname.substring(6));
+				if (!normalizedPath) {
+					throw new Error('Sync path is required.');
+				}
 
+				await ensurePathRoutesTable(env);
+				const route = await env.DB.prepare(database.selectByPath).bind(normalizedPath).first<PathRouteRow>();
+				if (!route) {
+					throw new Error(`Sync route not found for path: ${normalizedPath}`);
+				}
+
+				return await handleSync(request, content, route, env, ctx, lab);
+			}
+
+			const normalizedPath = normalizePathKey(pathname);
 			if (normalizedPath) {
 				await ensurePathRoutesTable(env);
 				const route = await env.DB.prepare(database.selectByPath).bind(normalizedPath).first<PathRouteRow>();
 
-				if (route) {
-					if (isExplicitSync || route.is_async === 0) {
-						return await handleSync(request, content, route, env, ctx, lab);
-					}
+				if (route && route.is_async === 0) {
+					return await handleSync(request, content, route, env, ctx, lab);
 				}
 			}
 
