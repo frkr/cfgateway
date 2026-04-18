@@ -31,21 +31,35 @@ export async function storeMessage(content: string, url: string, env: Env, lab =
 	return { id: nextId, filename: fname, time: agora.getTime() };
 }
 
-async function handleSync(request: Request, content: string, routeRow: PathRouteRow, env: Env, lab = false) {
+async function handleSync(request: Request, content: string, routeRow: PathRouteRow, env: Env, ctx: ExecutionContext, lab = false) {
 	const route = toPathRoute(routeRow);
 	const asyncConfig = toPathRouteAsync(route);
 
-	const inputMsg = await storeMessage(content, request.url, env, lab);
+	// 1. IN - Prepare recording in background
+	const inTime = new Date();
+	const inId = await randomHEX();
+	const inFilename = mqfilename(inTime, inId);
 
-	// Prepare destiny request
+	ctx.waitUntil((async () => {
+		await env.CFGATEWAY.put(inFilename, content);
+		await env.MQCFGATEWAY.send({
+			id: inId,
+			url: request.url,
+			filename: inFilename,
+			type: 'store',
+			time: inTime.getTime(),
+			lab
+		} as MQCFGATEWAYMessage, { contentType: 'json' });
+	})());
+
+	// 2. DESTINY - Perform fetch
 	const headers = new Headers();
-	if (asyncConfig.headersDestiny) {
-		for (const [key, value] of Object.entries(asyncConfig.headersDestiny)) {
-			headers.set(key, value);
-		}
+	const headersRecord = toHeadersRecord(route.headersDestiny);
+	for (const [key, value] of Object.entries(headersRecord)) {
+		headers.set(key, value);
 	}
-	if (asyncConfig.contentTypeDestiny) {
-		headers.set('Content-Type', asyncConfig.contentTypeDestiny);
+	if (route.contentTypeDestiny) {
+		headers.set('Content-Type', route.contentTypeDestiny);
 	}
 
 	const destinyResponse = await fetch(asyncConfig.destiny!, {
@@ -56,42 +70,46 @@ async function handleSync(request: Request, content: string, routeRow: PathRoute
 
 	const destinyBody = await destinyResponse.text();
 	const destinyTime = new Date();
-	const destinyNextId = await randomHEX();
-	const destinyFilename = mqfilename(destinyTime, destinyNextId);
 
-	const destinyContent: MQCFGATEWAYMessageAsync = {
-		...asyncConfig,
-		content: destinyBody
-	};
+	// 3. OUT and CALLBACK - Prepare recording in background
+	ctx.waitUntil((async () => {
+		const outContent: MQCFGATEWAYMessageAsync = {
+			...asyncConfig,
+			content: destinyBody
+		};
 
-	await env.CFGATEWAY.put(destinyFilename, JSON.stringify(destinyContent));
+		const records: Promise<any>[] = [];
 
-	// Queue recording of out/callback without blocking response
-	const records = [
-		env.MQCFGATEWAY.send({
-			id: inputMsg.id,
+		// OUT log
+		const outId = await randomHEX();
+		const outFilename = mqfilename(destinyTime, outId);
+		records.push(env.CFGATEWAY.put(outFilename, JSON.stringify(outContent)));
+		records.push(env.MQCFGATEWAY.send({
+			id: inId,
 			url: asyncConfig.destiny,
-			filename: destinyFilename,
+			filename: outFilename,
 			time: destinyTime.getTime(),
 			type: 'out',
 			lab
-		} as MQCFGATEWAYMessage, { contentType: 'json' })
-	];
+		} as MQCFGATEWAYMessage, { contentType: 'json' }));
 
-	if (asyncConfig.callback) {
-		records.push(
-			env.MQCFGATEWAY.send({
-				id: inputMsg.id,
+		// CALLBACK log and trigger
+		if (asyncConfig.callback) {
+			const cbId = await randomHEX();
+			const cbFilename = mqfilename(destinyTime, cbId);
+			records.push(env.CFGATEWAY.put(cbFilename, JSON.stringify(outContent)));
+			records.push(env.MQCFGATEWAY.send({
+				id: inId,
 				url: asyncConfig.callback,
-				filename: destinyFilename,
+				filename: cbFilename,
 				time: destinyTime.getTime(),
 				type: 'callback',
 				lab
-			} as MQCFGATEWAYMessage, { contentType: 'json' })
-		);
-	}
+			} as MQCFGATEWAYMessage, { contentType: 'json' }));
+		}
 
-	await Promise.allSettled(records);
+		await Promise.allSettled(records);
+	})());
 
 	// Return response to client
 	const responseHeaders = new Headers();
@@ -107,7 +125,7 @@ async function handleSync(request: Request, content: string, routeRow: PathRoute
 }
 
 // Essa função esta perfeita e não deve ser alterada sem permissao do usuário
-async function handleRequest(request: Request, env: Env, lab = false) {
+async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, lab = false) {
 	try {
 		const content = await request.text();
 		const { pathname } = new URL(request.url);
@@ -136,7 +154,7 @@ async function handleRequest(request: Request, env: Env, lab = false) {
 
 				if (route) {
 					if (isExplicitSync || route.is_async === 0) {
-						return await handleSync(request, content, route, env, lab);
+						return await handleSync(request, content, route, env, ctx, lab);
 					}
 				}
 			}
@@ -156,9 +174,9 @@ async function handleRequest(request: Request, env: Env, lab = false) {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-	return handleRequest(request, context.cloudflare.env);
+	return handleRequest(request, context.cloudflare.env, context.cloudflare.ctx);
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-	return handleRequest(request, context.cloudflare.env);
+	return handleRequest(request, context.cloudflare.env, context.cloudflare.ctx);
 }

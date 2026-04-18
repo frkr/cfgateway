@@ -25,6 +25,9 @@ describe("mainroute sync", () => {
 				send: vi.fn().mockResolvedValue(undefined)
 			}
 		};
+		const mockCtx = {
+			waitUntil: vi.fn()
+		};
 
 		// Insert a path route for 'davi'
 		await env.DB.prepare(pathrouteDatabase.insert)
@@ -32,7 +35,7 @@ describe("mainroute sync", () => {
 				'path-sync-1',
 				'davi',
 				'https://destiny.com/api',
-				'', // callback
+				'https://callback.com/api', // callback
 				'POST',
 				'POST',
 				'application/json',
@@ -60,7 +63,8 @@ describe("mainroute sync", () => {
 		});
 		const context = {
 			cloudflare: {
-				env: mockEnv
+				env: mockEnv,
+				ctx: mockCtx
 			}
 		};
 
@@ -71,9 +75,16 @@ describe("mainroute sync", () => {
 		expect(body).toBe('{"success":true}');
 		expect(response.headers.get('Content-Type')).toBe('application/json');
 
-		// Verify that logs were stored
-		expect(mockEnv.CFGATEWAY.put).toHaveBeenCalled();
-		expect(mockEnv.MQCFGATEWAY.send).toHaveBeenCalled();
+		// Verify that logs were scheduled via waitUntil
+		expect(mockCtx.waitUntil).toHaveBeenCalled();
+
+		// Run all microtasks to allow background work to proceed if awaited
+		await Promise.allSettled(mockCtx.waitUntil.mock.calls.map(call => call[0]));
+
+		// 3 files should have been put: 1 IN, 1 OUT, 1 CALLBACK
+		expect(mockEnv.CFGATEWAY.put).toHaveBeenCalledTimes(3);
+		// 3 queue messages should have been sent: 1 IN (store), 1 OUT, 1 CALLBACK
+		expect(mockEnv.MQCFGATEWAY.send).toHaveBeenCalledTimes(3);
 	});
 
 	it("responds synchronously when is_async is 0 in database", async () => {
@@ -85,6 +96,9 @@ describe("mainroute sync", () => {
 			MQCFGATEWAY: {
 				send: vi.fn().mockResolvedValue(undefined)
 			}
+		};
+		const mockCtx = {
+			waitUntil: vi.fn()
 		};
 
 		// Insert a path route for 'davi' with is_async = 0
@@ -121,7 +135,8 @@ describe("mainroute sync", () => {
 		});
 		const context = {
 			cloudflare: {
-				env: mockEnv
+				env: mockEnv,
+				ctx: mockCtx
 			}
 		};
 
