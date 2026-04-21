@@ -47,7 +47,7 @@ async function handleSync(request: Request, content: string, routeRow: PathRoute
 	const inTime = new Date();
 	const inId = await randomHEX();
 	
-	records.push(async a => {
+	records.push(async (_a: unknown) => {
 		const inFilename = mqfilename(inTime, inId);
 		await env.CFGATEWAY.put(inFilename, content);
 		await env.MQCFGATEWAY.send({
@@ -79,7 +79,7 @@ async function handleSync(request: Request, content: string, routeRow: PathRoute
 	const destinyTime = new Date();
 	const destinyBody = await destinyResponse.text();
 	
-	records.push(async a => {
+	records.push(async (_a: unknown) => {
 		
 		// OUT log
 		const outId = await randomHEX();
