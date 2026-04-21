@@ -103,7 +103,7 @@ async function handleSync(request: Request, content: string, routeRow: PathRoute
 		responseHeaders.set('Content-Type', contentType);
 	}
 	
-	await Promise.all(records);
+	await Promise.allSettled(records);
 	
 	return new Response(destinyBody, {
 		status: destinyResponse.status,
