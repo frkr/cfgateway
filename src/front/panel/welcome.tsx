@@ -197,7 +197,7 @@ export function Welcome({ requireAuth, messages: initialMessages = [], version }
 						{version?.timestamp && (
 							<span className="text-gray-400 normal-case" title={version.id}>
 								Version: {version?.tag && 'v' + version.tag + ' '}{formatDate(version.timestamp)}
-								::
+								{':: '}
 							</span>
 						)}
 						{lastUpdatedAt && (
