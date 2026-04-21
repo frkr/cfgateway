@@ -41,21 +41,24 @@ export async function queueMessage(content: string, url: string, env: Env, lab =
 async function handleSync(request: Request, content: string, routeRow: PathRouteRow, env: Env, ctx: ExecutionContext, lab = false) {
 	const route = toPathRoute(routeRow);
 	const asyncConfig = toPathRouteAsync(route);
+	const records = [];
 	
 	// 1. IN - Prepare recording in background
 	const inTime = new Date();
 	const inId = await randomHEX();
-	const inFilename = mqfilename(inTime, inId);
 	
-	await env.CFGATEWAY.put(inFilename, content);
-	await env.MQCFGATEWAY.send({
-		id: inId,
-		url: request.url,
-		filename: inFilename,
-		type: 'store',
-		time: inTime.getTime(),
-		lab
-	} as MQCFGATEWAYMessage, { contentType: 'json' });
+	records.push(async a => {
+		const inFilename = mqfilename(inTime, inId);
+		await env.CFGATEWAY.put(inFilename, content);
+		await env.MQCFGATEWAY.send({
+			id: inId,
+			url: request.url,
+			filename: inFilename,
+			type: 'store',
+			time: inTime.getTime(),
+			lab
+		} as MQCFGATEWAYMessage, { contentType: 'json' });
+	});
 	
 	// 2. DESTINY - Perform fetch
 	const headers = new Headers();
@@ -68,32 +71,30 @@ async function handleSync(request: Request, content: string, routeRow: PathRoute
 	}
 	
 	const destinyResponse = await fetch(asyncConfig.destiny!, {
-		method: asyncConfig.methodDestiny || 'POST',
+		method: asyncConfig.methodDestiny || request.method,
 		headers: headers,
 		body: content || null
 	});
 	
-	const destinyBody = await destinyResponse.text();
 	const destinyTime = new Date();
+	const destinyBody = await destinyResponse.text();
 	
-	const outContent: MQCFGATEWAYMessageAsync = {
-		...asyncConfig,
-		content: destinyBody
-	};
-	
-	// OUT log
-	const outId = await randomHEX();
-	const outFilename = mqfilename(destinyTime, outId);
-	env.CFGATEWAY.put(outFilename, JSON.stringify(outContent));
-	env.MQCFGATEWAY.send({
-		id: outId,
-		parent: inId,
-		url: asyncConfig.destiny,
-		filename: outFilename,
-		time: destinyTime.getTime(),
-		type: 'out',
-		lab
-	} as MQCFGATEWAYMessage, { contentType: 'json' });
+	records.push(async a => {
+		
+		// OUT log
+		const outId = await randomHEX();
+		const outFilename = mqfilename(destinyTime, outId);
+		env.CFGATEWAY.put(outFilename, destinyBody);
+		env.MQCFGATEWAY.send({
+			id: outId,
+			parent: inId,
+			url: asyncConfig.destiny,
+			filename: outFilename,
+			time: destinyTime.getTime(),
+			type: 'out',
+			lab
+		} as MQCFGATEWAYMessage, { contentType: 'json' });
+	});
 	
 	// Return response to client
 	const responseHeaders = new Headers();
@@ -101,6 +102,8 @@ async function handleSync(request: Request, content: string, routeRow: PathRoute
 	if (contentType) {
 		responseHeaders.set('Content-Type', contentType);
 	}
+	
+	await Promise.all(records);
 	
 	return new Response(destinyBody, {
 		status: destinyResponse.status,
