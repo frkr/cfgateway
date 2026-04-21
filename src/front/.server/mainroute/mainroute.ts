@@ -38,7 +38,7 @@ export async function queueMessage(content: string, url: string, env: Env, lab =
 	return { id: nextId, filename: fname, time: agora.getTime() };
 }
 
-async function handleSync(request: Request, content: string, routeRow: PathRouteRow, env: Env, ctx: ExecutionContext, lab = false) {
+async function handleSync(request: Request, content: string, routeRow: PathRouteRow, env: Env, ctx: ExecutionContext, lab = false, fullpath: string | null = null) {
 	const route = toPathRoute(routeRow);
 	const asyncConfig = toPathRouteAsync(route);
 	const records = [];
@@ -70,7 +70,7 @@ async function handleSync(request: Request, content: string, routeRow: PathRoute
 		headers.set('Content-Type', route.contentTypeDestiny);
 	}
 	
-	const destinyResponse = await fetch(asyncConfig.destiny!, {
+	const destinyResponse = await fetch(asyncConfig.destiny! + (!fullpath ? '' : fullpath), {
 		method: asyncConfig.methodDestiny || request.method,
 		headers: headers,
 		body: content || null
@@ -112,7 +112,7 @@ async function handleSync(request: Request, content: string, routeRow: PathRoute
 }
 
 // Essa função esta perfeita e não deve ser alterada sem permissao do usuário
-async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, lab = false) {
+async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, lab = false, fullpath: string | null = null) {
 	try {
 		const content = await request.text();
 		const { pathname } = new URL(request.url);
@@ -137,9 +137,14 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, 
 			}
 			
 			if (pathname.startsWith('/sync/')) {
-				const normalizedPath = normalizePathKey(pathname.substring(6));
+				let normalizedPath = normalizePathKey(pathname.substring(6));
 				if (!normalizedPath) {
 					throw new Error('Sync path is required.');
+				}
+				let fullpath = null;
+				if (normalizedPath.includes('/')) {
+					fullpath = normalizedPath.substring(normalizedPath.indexOf('/'));
+					normalizedPath = normalizePathKey(normalizedPath.substring(0, normalizedPath.indexOf('/')));
 				}
 				
 				const route = await env.DB.prepare(database.selectByPath).bind(normalizedPath).first<PathRouteRow>();
@@ -147,7 +152,7 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, 
 					throw new Error(`Sync route not found for path: ${normalizedPath}`);
 				}
 				
-				return await handleSync(request, content, route, env, ctx, lab);
+				return await handleSync(request, content, route, env, ctx, lab, fullpath);
 			}
 			
 			await queueMessage(content, request.url, env, lab);
