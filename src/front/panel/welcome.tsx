@@ -2,10 +2,11 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { Message } from '@/database';
 import { useNavigate, useParams, Link } from 'react-router';
 
-export function Welcome({ requireAuth, messages: initialMessages = [] }: {
+export function Welcome({ requireAuth, messages: initialMessages = [], version }: {
 	requireAuth?: boolean;
 	message: string;
-	messages?: Message[]
+	messages?: Message[];
+	version?: { id?: string; tag?: string; timestamp?: number };
 }) {
 	const navigate = useNavigate();
 	const params = useParams();
@@ -37,9 +38,9 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: {
 	
 	useEffect(() => {
 		if (requireAuth) {
-				setShowTokenModal(true);
-			}
-		}, [requireAuth, id_parent_param]);
+			setShowTokenModal(true);
+		}
+	}, [requireAuth, id_parent_param]);
 	
 	const saveToken = async () => {
 		if (tokenInput.trim()) {
@@ -193,6 +194,12 @@ export function Welcome({ requireAuth, messages: initialMessages = [] }: {
 						<span className={`font-bold ${isRefreshing ? 'text-blue-500 animate-pulse' : 'text-gray-400'}`}>
 							Auto-refresh 5s
 						</span>
+						{version?.timestamp && (
+							<span className="text-gray-400 normal-case" title={version.id}>
+								Version: {version?.tag && 'v' + version.tag + ' '}{formatDate(version.timestamp)}
+								::
+							</span>
+						)}
 						{lastUpdatedAt && (
 							<span className="text-gray-400 normal-case">
 								updated {formatDate(lastUpdatedAt)}

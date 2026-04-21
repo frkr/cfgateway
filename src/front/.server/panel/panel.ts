@@ -38,11 +38,18 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 			isGrouped = true;
 		}
 		
+		const versionMeta = {
+			id: context.cloudflare.env.CF_VERSION_METADATA?.id,
+			tag: context.cloudflare.env.CF_VERSION_METADATA?.tag,
+			timestamp: context.cloudflare.env.CF_VERSION_METADATA?.timestamp
+		};
+
 		const data = {
 			message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE,
 			messages: results as unknown as Message[],
 			id_parent,
-			isGrouped
+			isGrouped,
+			version: versionMeta
 		};
 		
 		if (wantsJson) {
