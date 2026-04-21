@@ -24,3 +24,7 @@ Content-Type: application/json
 {
   "message": "Teste125"
 }
+
+### Path Sync Cadastrado
+GET https://cfgateway.casaid.workers.dev/sync/teste2
+Content-Type: application/json

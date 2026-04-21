@@ -148,7 +148,7 @@ describe('Panel Path Routes - Action', () => {
 	
 	it('should delete a path route', async () => {
 		await env.DB.prepare(database.insert)
-			.bind('path-1', 'davi', 'https://destiny.example.com/hook', null, 'POST', 'POST', null, null, null, null, 1, Date.now(), Date.now())
+			.bind('path-1', 'davi', 'https://destiny.example.com/hook', null, 'POST', 'POST', null, null, null, null, 1, 1, Date.now(), Date.now())
 			.run();
 		
 		const request = new Request('http://example.com/panel/paths?json=1', {

@@ -22,6 +22,7 @@ type FormState = {
 	headersDestiny: PathRouteHeaderEntry[];
 	headersCallback: PathRouteHeaderEntry[];
 	enabled: boolean;
+	isAsync: boolean;
 };
 
 const emptyForm: FormState = {
@@ -34,7 +35,8 @@ const emptyForm: FormState = {
 	contentTypeCallback: '',
 	headersDestiny: [],
 	headersCallback: [],
-	enabled: true
+	enabled: true,
+	isAsync: true
 };
 
 function HeaderFields({
@@ -199,7 +201,8 @@ export default function PathsPanel({ loaderData }: Route.ComponentProps) {
 						contentTypeCallback: form.contentTypeCallback,
 						headersDestiny: form.headersDestiny,
 						headersCallback: form.headersCallback,
-						enabled: form.enabled
+						enabled: form.enabled,
+						isAsync: form.isAsync
 					}
 				})
 			});
@@ -365,14 +368,24 @@ export default function PathsPanel({ loaderData }: Route.ComponentProps) {
 							headers={form.headersCallback}
 							onChange={(headersCallback) => setForm((prev) => ({ ...prev, headersCallback }))}
 						/>
-						<label className="flex items-center gap-2 text-[11px] text-gray-500">
-							<input
-								type="checkbox"
-								checked={form.enabled}
-								onChange={(event) => setForm((prev) => ({ ...prev, enabled: event.target.checked }))}
-							/>
-							Enabled
-						</label>
+						<div className="flex gap-4">
+							<label className="flex items-center gap-2 text-[11px] text-gray-500">
+								<input
+									type="checkbox"
+									checked={form.enabled}
+									onChange={(event) => setForm((prev) => ({ ...prev, enabled: event.target.checked }))}
+								/>
+								Enabled
+							</label>
+							<label className="flex items-center gap-2 text-[11px] text-gray-500">
+								<input
+									type="checkbox"
+									checked={form.isAsync}
+									onChange={(event) => setForm((prev) => ({ ...prev, isAsync: event.target.checked }))}
+								/>
+								Async
+							</label>
+						</div>
 						<div className="flex gap-2">
 							<button
 								type="submit"
@@ -398,15 +411,16 @@ export default function PathsPanel({ loaderData }: Route.ComponentProps) {
 				</section>
 				
 				<section className="border border-gray-200 dark:border-gray-800 rounded overflow-hidden">
-					<div className="grid grid-cols-[1.2fr_2fr_90px_90px] gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800 uppercase text-[10px] text-gray-400 font-bold">
+					<div className="grid grid-cols-[1.2fr_2fr_90px_70px_70px] gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800 uppercase text-[10px] text-gray-400 font-bold">
 						<span>Path</span>
 						<span>Destiny</span>
 						<span>Method</span>
 						<span>Status</span>
+						<span>Type</span>
 					</div>
 					<div className="divide-y divide-gray-100 dark:divide-gray-900">
 						{routes.map((route) => (
-							<div key={route.id} className="px-4 py-3 flex flex-col gap-3 md:grid md:grid-cols-[1.2fr_2fr_90px_90px_140px] md:items-center">
+							<div key={route.id} className="px-4 py-3 flex flex-col gap-3 md:grid md:grid-cols-[1.2fr_2fr_90px_70px_70px_140px] md:items-center">
 								<span className="break-all text-gray-800 dark:text-gray-100">/{route.path}</span>
 								<span className="break-all text-gray-500">{route.destiny}</span>
 								<span className="font-bold">{route.methodDestiny}</span>
@@ -414,6 +428,9 @@ export default function PathsPanel({ loaderData }: Route.ComponentProps) {
 									<span aria-label={route.enabled ? 'Enabled' : 'Disabled'}>
 										{route.enabled ? '✅' : '❌'}
 									</span>
+								</div>
+								<div className="text-[10px] font-bold uppercase text-gray-500">
+									{route.isAsync ? 'Async' : 'Sync'}
 								</div>
 								<div className="flex gap-2 md:justify-end">
 									<button
@@ -429,7 +446,8 @@ export default function PathsPanel({ loaderData }: Route.ComponentProps) {
 											contentTypeCallback: route.contentTypeCallback,
 											headersDestiny: route.headersDestiny,
 											headersCallback: route.headersCallback,
-											enabled: route.enabled
+											enabled: route.enabled,
+											isAsync: route.isAsync
 										})}
 										className="px-3 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded uppercase font-bold"
 									>

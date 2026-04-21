@@ -1,14 +1,15 @@
 {
-  "createTable": "CREATE TABLE IF NOT EXISTS paths (id TEXT PRIMARY KEY, path TEXT NOT NULL UNIQUE, destiny TEXT NOT NULL, callback TEXT, method_destiny TEXT NOT NULL, method_callback TEXT, content_type_destiny TEXT, content_type_callback TEXT, headers_destiny TEXT, headers_callback TEXT, enabled INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)",
+  "createTable": "CREATE TABLE IF NOT EXISTS paths (id TEXT PRIMARY KEY, path TEXT NOT NULL UNIQUE, destiny TEXT NOT NULL, callback TEXT, method_destiny TEXT NOT NULL, method_callback TEXT, content_type_destiny TEXT, content_type_callback TEXT, headers_destiny TEXT, headers_callback TEXT, enabled INTEGER NOT NULL DEFAULT 1, is_async INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)",
   "alterAddCallback": "ALTER TABLE paths ADD COLUMN callback TEXT",
   "alterAddMethodCallback": "ALTER TABLE paths ADD COLUMN method_callback TEXT",
   "alterAddContentTypeDestiny": "ALTER TABLE paths ADD COLUMN content_type_destiny TEXT",
   "alterAddContentTypeCallback": "ALTER TABLE paths ADD COLUMN content_type_callback TEXT",
   "alterAddHeadersDestiny": "ALTER TABLE paths ADD COLUMN headers_destiny TEXT",
   "alterAddHeadersCallback": "ALTER TABLE paths ADD COLUMN headers_callback TEXT",
-  "selectAll": "SELECT id, path, destiny, callback, method_destiny, method_callback, content_type_destiny, content_type_callback, headers_destiny, headers_callback, enabled, created_at, updated_at FROM paths ORDER BY path ASC",
-  "selectByPath": "SELECT id, path, destiny, callback, method_destiny, method_callback, content_type_destiny, content_type_callback, headers_destiny, headers_callback, enabled, created_at, updated_at FROM paths WHERE path = ? AND enabled = 1 LIMIT 1",
-  "insert": "INSERT INTO paths (id, path, destiny, callback, method_destiny, method_callback, content_type_destiny, content_type_callback, headers_destiny, headers_callback, enabled, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-  "update": "UPDATE paths SET path = ?, destiny = ?, callback = ?, method_destiny = ?, method_callback = ?, content_type_destiny = ?, content_type_callback = ?, headers_destiny = ?, headers_callback = ?, enabled = ?, updated_at = ? WHERE id = ?",
+  "alterAddIsAsync": "ALTER TABLE paths ADD COLUMN is_async INTEGER NOT NULL DEFAULT 1",
+  "selectAll": "SELECT id, path, destiny, callback, method_destiny, method_callback, content_type_destiny, content_type_callback, headers_destiny, headers_callback, enabled, is_async, created_at, updated_at FROM paths ORDER BY path ASC",
+  "selectByPath": "SELECT id, path, destiny, callback, method_destiny, method_callback, content_type_destiny, content_type_callback, headers_destiny, headers_callback, enabled, is_async, created_at, updated_at FROM paths WHERE path = ? AND enabled = 1 LIMIT 1",
+  "insert": "INSERT INTO paths (id, path, destiny, callback, method_destiny, method_callback, content_type_destiny, content_type_callback, headers_destiny, headers_callback, enabled, is_async, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+  "update": "UPDATE paths SET path = ?, destiny = ?, callback = ?, method_destiny = ?, method_callback = ?, content_type_destiny = ?, content_type_callback = ?, headers_destiny = ?, headers_callback = ?, enabled = ?, is_async = ?, updated_at = ? WHERE id = ?",
   "delete": "DELETE FROM paths WHERE id = ?"
 }
