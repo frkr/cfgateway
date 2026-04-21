@@ -4,15 +4,15 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "npm run typecheck && react-router build",
+		"build": "pnpm run typecheck && react-router build",
 		"cf-typegen": "wrangler types",
-		"deploy": "npm run build && wrangler deploy",
+		"deploy": "pnpm run build && wrangler deploy",
 		"dev": "react-router dev",
-		"postinstall": "npm run cf-typegen",
-		"preview": "npm run build && vite preview",
+		"postinstall": "pnpm run cf-typegen",
+		"preview": "pnpm run build && vite preview",
 		"test": "vitest run",
 		"test:e2e": "playwright test",
-		"typecheck": "npm run cf-typegen && react-router typegen && tsc -b"
+		"typecheck": "pnpm run cf-typegen && react-router typegen && tsc -b"
 	},
 	"dependencies": {
 		"isbot": "^5.1.38",
