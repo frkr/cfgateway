@@ -37,9 +37,17 @@ Cloudflare Gateway es una herramienta potente y ligera diseñada para almacenar,
    ```bash
    pnpm install
    ```
-3. Inicialice la base de datos local:
+3. Cree la base de datos local:
    ```bash
-   pnpm wrangler d1 execute cfgateway --local --file=./path/to/schema.sql
+   npx wrangler d1 create cfgateway --location=enam
+   ```
+4. Inicialice el esquema de la base de datos local:
+   ```bash
+   npx wrangler d1 execute cfgateway --local --file=./schema.sql
+   ```
+5. Para usar una base de datos remota (producción):
+   ```bash
+   npx wrangler d1 execute cfgateway --remote --file=./schema.sql
    ```
 
 ### Desarrollo Local
@@ -65,4 +73,4 @@ Las variables de entorno y los bindings se gestionan en `wrangler.jsonc`:
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT - vea el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto está bajo la Licencia FSL-1.1-MIT - vea el archivo [LICENSE](LICENSE) para más detalles.
