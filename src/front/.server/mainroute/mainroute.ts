@@ -41,26 +41,25 @@ export async function queueMessage(content: string, url: string, env: Env, lab =
 async function handleSync(request: Request, content: string, routeRow: PathRouteRow, env: Env, ctx: ExecutionContext, lab = false, fullpath: string | null = null) {
 	const route = toPathRoute(routeRow);
 	const asyncConfig = toPathRouteAsync(route);
-	const records = [];
-	
-	// 1. IN - Prepare recording in background
+
+	// 1. IN - Start recording immediately (runs concurrently with fetch below)
 	const inTime = new Date();
 	const inId = await randomHEX();
-	
-	records.push(async (_a: unknown) => {
-		const inFilename = mqfilename(inTime, inId);
-		await env.CFGATEWAY.put(inFilename, content);
-		await env.MQCFGATEWAY.send({
+	const inFilename = mqfilename(inTime, inId);
+
+	const inPromise = Promise.all([
+		env.CFGATEWAY.put(inFilename, content),
+		env.MQCFGATEWAY.send({
 			id: inId,
 			url: request.url,
 			filename: inFilename,
 			type: 'store',
 			time: inTime.getTime(),
 			lab
-		} as MQCFGATEWAYMessage, { contentType: 'json' });
-	});
-	
-	// 2. DESTINY - Perform fetch
+		} as MQCFGATEWAYMessage, { contentType: 'json' })
+	]);
+
+	// 2. DESTINY - Perform fetch (runs in parallel with inPromise)
 	const headers = new Headers();
 	const headersRecord = toHeadersRecord(route.headersDestiny);
 	for (const [key, value] of Object.entries(headersRecord)) {
@@ -69,22 +68,22 @@ async function handleSync(request: Request, content: string, routeRow: PathRoute
 	if (route.contentTypeDestiny) {
 		headers.set('Content-Type', route.contentTypeDestiny);
 	}
-	
+
 	const destinyResponse = await fetch(asyncConfig.destiny! + (!fullpath ? '' : fullpath), {
 		method: asyncConfig.methodDestiny || request.method,
 		headers: headers,
 		body: content || null
 	});
-	
+
 	const destinyTime = new Date();
 	const destinyBody = await destinyResponse.text();
-	
-	records.push(async (_a: unknown) => {
-		
-		// OUT log
-		const outId = await randomHEX();
-		const outFilename = mqfilename(destinyTime, outId);
-		env.CFGATEWAY.put(outFilename, destinyBody);
+
+	// OUT log - starts after fetch completes (needs destinyBody)
+	const outId = await randomHEX();
+	const outFilename = mqfilename(destinyTime, outId);
+
+	const outPromise = Promise.all([
+		env.CFGATEWAY.put(outFilename, destinyBody),
 		env.MQCFGATEWAY.send({
 			id: outId,
 			parent: inId,
@@ -93,18 +92,18 @@ async function handleSync(request: Request, content: string, routeRow: PathRoute
 			time: destinyTime.getTime(),
 			type: 'out',
 			lab
-		} as MQCFGATEWAYMessage, { contentType: 'json' });
-	});
-	
+		} as MQCFGATEWAYMessage, { contentType: 'json' })
+	]);
+
 	// Return response to client
 	const responseHeaders = new Headers();
 	const contentType = destinyResponse.headers.get('Content-Type');
 	if (contentType) {
 		responseHeaders.set('Content-Type', contentType);
 	}
-	
-	await Promise.allSettled(records);
-	
+
+	await Promise.all([inPromise, outPromise]);
+
 	return new Response(destinyBody, {
 		status: destinyResponse.status,
 		headers: responseHeaders
