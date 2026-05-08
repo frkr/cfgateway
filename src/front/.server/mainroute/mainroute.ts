@@ -14,6 +14,7 @@ import {
 	type PathRouteRow
 } from '@/pathroute';
 import database from '@/pathroute.database.json';
+import { safeCompare } from '../panel/auth';
 
 //endregion
 
@@ -127,7 +128,7 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, 
 				const bearer = request.headers.get('Authorization');
 				const token = bearer ? bearer.replace('Bearer ', '') : null;
 				
-				if (!token || token !== env.ADMIN_TOKEN) {
+				if (!token || !safeCompare(token, env.ADMIN_TOKEN)) {
 					throw new Error('Invalid bearer token for /async path.');
 				}
 				

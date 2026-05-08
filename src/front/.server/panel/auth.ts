@@ -7,12 +7,26 @@ export const adminAuthCookie = createCookie("admin_token", {
   sameSite: "lax", // Protects against CSRF but allows the cookie to be sent with top-level navigations
 });
 
+export function safeCompare(a: string | null | undefined, b: string | null | undefined): boolean {
+	if (typeof a !== 'string' || typeof b !== 'string') {
+		return false;
+	}
+	let mismatch = a.length === b.length ? 0 : 1;
+	if (mismatch) {
+		b = a;
+	}
+	for (let i = 0; i < a.length; i++) {
+		mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+	}
+	return mismatch === 0;
+}
+
 export async function checkAdminAuth(request: Request, env: Env) {
 	// First check the Authorization header as a fallback for API-like usage
 	const authHeader = request.headers.get('Authorization');
 	const headerToken = authHeader ? authHeader.replace('Bearer ', '') : null;
 	
-	if (headerToken && headerToken === env.ADMIN_TOKEN) {
+	if (headerToken && safeCompare(headerToken, env.ADMIN_TOKEN)) {
 		return true;
 	}
 
@@ -20,7 +34,7 @@ export async function checkAdminAuth(request: Request, env: Env) {
 	const cookieHeader = request.headers.get("Cookie");
 	const cookieToken = (await adminAuthCookie.parse(cookieHeader)) as string | null;
 
-	if (!env.ADMIN_TOKEN || cookieToken !== env.ADMIN_TOKEN) {
+	if (!env.ADMIN_TOKEN || !safeCompare(cookieToken, env.ADMIN_TOKEN)) {
 		return false;
 	}
 	

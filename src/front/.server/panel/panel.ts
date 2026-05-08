@@ -2,7 +2,7 @@ import type { Route } from '../../routes/+types/panel';
 import database from './database.json';
 import type { Message } from '@/database';
 import { queueMessage } from '../mainroute/mainroute';
-import { checkAdminAuth, isJsonRequest, adminAuthCookie } from './auth';
+import { checkAdminAuth, isJsonRequest, adminAuthCookie, safeCompare } from './auth';
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
 	const url = new URL(request.url);
@@ -72,7 +72,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 			const body = await request.json() as { intent?: string; message?: Message; token?: string };
 			
 			if (body.intent === 'login') {
-				if (body.token === context.cloudflare.env.ADMIN_TOKEN) {
+				if (safeCompare(body.token, context.cloudflare.env.ADMIN_TOKEN)) {
 					const cookieStr = await adminAuthCookie.serialize(body.token, {
 						secure: new URL(request.url).protocol === 'https:'
 					});
