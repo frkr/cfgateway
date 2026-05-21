@@ -72,7 +72,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 			const body = await request.json() as { intent?: string; message?: Message; token?: string };
 			
 			if (body.intent === 'login') {
-				if (safeCompare(body.token, context.cloudflare.env.ADMIN_TOKEN)) {
+				if (await safeCompare(body.token, context.cloudflare.env.ADMIN_TOKEN)) {
 					const cookieStr = await adminAuthCookie.serialize(body.token, {
 						secure: new URL(request.url).protocol === 'https:'
 					});

@@ -103,7 +103,25 @@ async function handleSync(request: Request, content: string, routeRow: PathRoute
 		responseHeaders.set('Content-Type', contentType);
 	}
 
-	await Promise.all([inPromise, outPromise]);
+	let promises = [inPromise, outPromise];
+
+	if (asyncConfig.callback) {
+		const callbackPromise = Promise.all([
+			env.CFGATEWAY.put(outFilename, destinyBody), // Overwrites with same content
+			env.MQCFGATEWAY.send({
+				id: outId,
+				parent: inId,
+				url: asyncConfig.callback,
+				filename: outFilename,
+				time: destinyTime.getTime(),
+				type: 'callback',
+				lab
+			} as MQCFGATEWAYMessage, { contentType: 'json' })
+		]);
+		promises.push(callbackPromise);
+	}
+
+	ctx.waitUntil(Promise.all(promises));
 
 	return new Response(destinyBody, {
 		status: destinyResponse.status,
@@ -120,11 +138,11 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, 
 		if (request.method === 'GET' ||
 			(!isEmpty(content) && content.length > 10)
 		) {
-			if (pathname.startsWith('/store/')) {
+			if (pathname === '/store' || pathname.startsWith('/store/')) {
 				await queueMessage(content, request.url, env, lab, true);
 				return HTTP_CREATED();
 			}
-			if (pathname.startsWith('/async/')) {
+			if (pathname === '/async' || pathname.startsWith('/async/')) {
 				const bearer = request.headers.get('Authorization');
 				const token = bearer ? bearer.replace('Bearer ', '') : null;
 				
@@ -132,11 +150,22 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, 
 					throw new Error('Invalid bearer token for /async path.');
 				}
 				
-				await queueMessage(content, request.url, env, lab);
+	let normalizedPath = normalizePathKey(pathname);
+			let fullpathFallback = null;
+			if (normalizedPath.includes('/')) {
+				fullpathFallback = normalizedPath.substring(normalizedPath.indexOf('/'));
+				normalizedPath = normalizePathKey(normalizedPath.substring(0, normalizedPath.indexOf('/')));
+			}
+			const route = await env.DB.prepare(database.selectByPath).bind(normalizedPath).first<PathRouteRow>();
+			if (route && route.is_async === 0) {
+				return await handleSync(request, content, route, env, ctx, lab, fullpathFallback);
+			}
+
+			await queueMessage(content, request.url, env, lab);
 				return HTTP_CREATED();
 			}
 			
-			if (pathname.startsWith('/sync/')) {
+			if (pathname === '/sync' || pathname.startsWith('/sync/')) {
 				let normalizedPath = normalizePathKey(pathname.substring(6));
 				if (!normalizedPath) {
 					throw new Error('Sync path is required.');
@@ -154,7 +183,25 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, 
 				
 				return await handleSync(request, content, route, env, ctx, lab, fullpath);
 			}
-			
+
+			try {
+				let normalizedPath = normalizePathKey(pathname);
+				let fullpathFallback = null;
+				if (normalizedPath.includes('/')) {
+					fullpathFallback = normalizedPath.substring(normalizedPath.indexOf('/'));
+					normalizedPath = normalizePathKey(normalizedPath.substring(0, normalizedPath.indexOf('/')));
+				}
+				const routeFallback = await env.DB.prepare(database.selectByPath).bind(normalizedPath).first<PathRouteRow>();
+				if (routeFallback && routeFallback.is_async === 0) {
+					return await handleSync(request, content, routeFallback, env, ctx, lab, fullpathFallback);
+				}
+			} catch (e) {
+				// Ignore DB errors here, fallthrough to async queue
+				if (e instanceof Error && !e.message.includes('no such table')) {
+					console.error('DB error reading async route fallback:', e);
+				}
+			}
+
 			await queueMessage(content, request.url, env, lab);
 		} else {
 			throw new Error('Content is empty or too short.');
