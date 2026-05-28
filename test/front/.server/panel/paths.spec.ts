@@ -178,6 +178,73 @@ describe('Panel Path Routes - Action', () => {
 		expect(data.routes).toHaveLength(0);
 	});
 	
+	it('should reject ftp or file protocol in destiny URL to prevent SSRF', async () => {
+		const context = {
+			cloudflare: {
+				env: {
+					...env,
+					ADMIN_TOKEN: 'supersecret'
+				}
+			}
+		} as any;
+
+		const createRequest = new Request('http://example.com/panel/paths?json=1', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer supersecret'
+			},
+			body: JSON.stringify({
+				intent: 'save',
+				route: {
+					path: '/ssrf-test-destiny/',
+					destiny: 'ftp://evil.com/hook',
+					methodDestiny: 'POST'
+				}
+			})
+		});
+
+		const response = await action({ request: createRequest, context, params: {} } as any);
+		const data = await (response as Response).json() as { success: boolean; error?: string };
+
+		expect(data.success).toBe(false);
+		expect(data.error).toContain('Destiny URL must use http or https protocol.');
+	});
+
+	it('should reject ftp or file protocol in callback URL to prevent SSRF', async () => {
+		const context = {
+			cloudflare: {
+				env: {
+					...env,
+					ADMIN_TOKEN: 'supersecret'
+				}
+			}
+		} as any;
+
+		const createRequest = new Request('http://example.com/panel/paths?json=1', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: 'Bearer supersecret'
+			},
+			body: JSON.stringify({
+				intent: 'save',
+				route: {
+					path: '/ssrf-test-callback/',
+					destiny: 'https://destiny.example.com/hook',
+					callback: 'file:///etc/passwd',
+					methodDestiny: 'POST'
+				}
+			})
+		});
+
+		const response = await action({ request: createRequest, context, params: {} } as any);
+		const data = await (response as Response).json() as { success: boolean; error?: string };
+
+		expect(data.success).toBe(false);
+		expect(data.error).toContain('Callback URL must use http or https protocol.');
+	});
+
 	it('should read old path records without async extension columns filled', async () => {
 		const now = Date.now();
 		await env.DB.prepare('INSERT INTO paths (id, path, destiny, method_destiny, enabled, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
