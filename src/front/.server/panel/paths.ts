@@ -67,7 +67,10 @@ function validatePayload(payload: PathRoutePayload) {
 		throw new Error('Destiny is required.');
 	}
 	
-	new URL(destiny);
+	const destinyUrl = new URL(destiny);
+	if (destinyUrl.protocol !== 'http:' && destinyUrl.protocol !== 'https:') {
+		throw new Error('Destiny URL must use http or https protocol.');
+	}
 	
 	const methodDestiny = normalizeMethodDestiny(String(payload.methodDestiny || 'POST'));
 	if (!isPathRouteMethod(methodDestiny)) {
@@ -76,7 +79,10 @@ function validatePayload(payload: PathRoutePayload) {
 	
 	const callback = String(payload.callback || '').trim();
 	if (callback) {
-		new URL(callback);
+		const callbackUrl = new URL(callback);
+		if (callbackUrl.protocol !== 'http:' && callbackUrl.protocol !== 'https:') {
+			throw new Error('Callback URL must use http or https protocol.');
+		}
 	}
 	
 	const methodCallback = normalizeMethodDestiny(String(payload.methodCallback || 'POST'));
