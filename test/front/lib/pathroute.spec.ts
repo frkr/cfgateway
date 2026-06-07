@@ -1,7 +1,42 @@
 import { describe, expect, it } from 'vitest';
-import { toPathRoute, type PathRouteRow } from '../../../src/front/lib/pathroute';
+import { isPathRouteMethod, normalizeMethodDestiny, toPathRoute, type PathRouteRow } from '../../../src/front/lib/pathroute';
 
 describe('pathroute', () => {
+	describe('normalizeMethodDestiny', () => {
+		it('should convert strings to uppercase', () => {
+			expect(normalizeMethodDestiny('get')).toBe('GET');
+			expect(normalizeMethodDestiny('post')).toBe('POST');
+			expect(normalizeMethodDestiny('Put')).toBe('PUT');
+		});
+
+		it('should trim whitespace from strings', () => {
+			expect(normalizeMethodDestiny('  get  ')).toBe('GET');
+			expect(normalizeMethodDestiny('\tpost\n')).toBe('POST');
+		});
+	});
+
+	describe('isPathRouteMethod', () => {
+		it('should return true for valid methods', () => {
+			expect(isPathRouteMethod('GET')).toBe(true);
+			expect(isPathRouteMethod('POST')).toBe(true);
+			expect(isPathRouteMethod('PUT')).toBe(true);
+			expect(isPathRouteMethod('PATCH')).toBe(true);
+			expect(isPathRouteMethod('DELETE')).toBe(true);
+		});
+
+		it('should return false for invalid methods', () => {
+			expect(isPathRouteMethod('OPTIONS')).toBe(false);
+			expect(isPathRouteMethod('HEAD')).toBe(false);
+			expect(isPathRouteMethod('INVALID')).toBe(false);
+			expect(isPathRouteMethod('')).toBe(false);
+		});
+
+		it('should return false for lowercase methods (since they are not normalized)', () => {
+			expect(isPathRouteMethod('get')).toBe(false);
+			expect(isPathRouteMethod('post')).toBe(false);
+		});
+	});
+
 	describe('toPathRoute', () => {
 		const baseRow: PathRouteRow = {
 			id: 'test-id',
