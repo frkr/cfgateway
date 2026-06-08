@@ -3,6 +3,7 @@ import database from '@/pathroute.database.json';
 import { ensurePathRoutesTable, normalizePathKey, toPathRoute, toPathRouteAsync, type PathRouteRow } from '@/pathroute';
 import MQStore from './MQStore';
 import MQDestiny from './MQDestiny';
+import { readR2Text } from '@/mqr2';
 
 async function storeLost(rawmsg: Message<unknown>, env: Env) {
 	await MQStore(rawmsg, env, {
@@ -12,16 +13,11 @@ async function storeLost(rawmsg: Message<unknown>, env: Env) {
 }
 
 async function hydrateDynamicRoute(msg: MQCFGATEWAYMessage, route: PathRouteRow, env: Env) {
-	if (!msg.filename) {
+	const rawContent = await readR2Text(env.CFGATEWAY, msg?.filename);
+	if (!rawContent) {
 		return false;
 	}
 	
-	const r2Object = await env.CFGATEWAY.get(msg.filename);
-	if (!r2Object) {
-		return false;
-	}
-	
-	const rawContent = await r2Object.text();
 	let asyncContent: MQCFGATEWAYMessageAsync = {
 		content: rawContent
 	};

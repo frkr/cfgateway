@@ -2,22 +2,13 @@ import MQStore from './MQStore';
 import type { MQCFGATEWAYMessage, MQCFGATEWAYMessageAsync } from '@/MQCFGATEWAY';
 import randomHEX from '@/randomHEX';
 import mqfilename from '@/mqfilename';
+import { readR2Json } from '@/mqr2';
 
 export default async function(rawmsg: Message<unknown>, env: Env) {
 	
 	let msg = rawmsg.body as MQCFGATEWAYMessage;
 	
-	let asyncContent: MQCFGATEWAYMessageAsync | null = null;
-	if (msg.filename) {
-		try {
-			let r2Object = await env.CFGATEWAY.get(msg.filename);
-			if (r2Object) {
-				asyncContent = JSON.parse(await r2Object.text());
-			}
-		} catch (e) {
-			console.error('Error reading file from R2:', e);
-		}
-	}
+	let asyncContent = await readR2Json<MQCFGATEWAYMessageAsync>(env.CFGATEWAY, msg?.filename);
 	
 	if (!asyncContent || !asyncContent.destiny) {
 		await MQStore(rawmsg, env, {
