@@ -1,6 +1,7 @@
 import type { MQCFGATEWAYMessage, MQCFGATEWAYType } from '@/MQCFGATEWAY';
 import database from './database.json';
 import randomHEX from '@/randomHEX';
+import { readR2Text } from '@/mqr2';
 
 type MQStoreParams = {
 	type?: MQCFGATEWAYType,
@@ -16,18 +17,7 @@ export default async function(
 	
 	let msg = rawmsg.body as MQCFGATEWAYMessage;
 	
-	let content = null;
-	
-	try {
-		if (!props?.notread && msg?.filename) {
-			let r2Object = await env.CFGATEWAY.get(msg.filename);
-			if (r2Object) {
-				content = await r2Object.text();
-			}
-		}
-	} catch (e) {
-		console.error('Error reading file from R2:', e);
-	}
+	let content = props?.notread ? null : await readR2Text(env.CFGATEWAY, msg?.filename);
 	
 	await env.DB.prepare(
 		database.insert
