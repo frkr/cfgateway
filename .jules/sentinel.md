@@ -7,3 +7,7 @@
 **Vulnerability:** The application was verifying if `destiny` and `callback` fields were valid URLs in `src/front/.server/panel/paths.ts`, but it didn't restrict the URL protocol to HTTP/HTTPS.
 **Learning:** `new URL()` simply validates the string as any URL (e.g., `ftp://`, `file://`, `data://`). When used in server-side `fetch` calls, an attacker could abuse these URL inputs to make the application read local files or connect to internal services via SSRF (Server-Side Request Forgery).
 **Prevention:** Always restrict user-provided URLs intended for external HTTP requests to `http:` and `https:` protocols. Validate `url.protocol` explicitly.
+## 2024-05-14 - Prevent SSRF in path routes configuration
+**Vulnerability:** The application was vulnerable to Server-Side Request Forgery (SSRF) because the path routes API (`src/front/.server/panel/paths.ts`) did not validate the protocol of user-provided `destiny` and `callback` URLs, potentially allowing malicious internal URLs like `file://` or `gopher://`.
+**Learning:** Simply using `new URL(urlString)` is insufficient for security if the resulting protocol is not validated. This can enable SSRF attacks, allowing potential internal network probing or unauthorized access to internal resources.
+**Prevention:** Always strictly enforce `http:` or `https:` protocols using the `URL` object (`url.protocol === "http:" || url.protocol === "https:"`) when accepting user-provided outbound request destinations.
