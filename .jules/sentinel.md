@@ -11,3 +11,8 @@
 **Vulnerability:** The application was vulnerable to Server-Side Request Forgery (SSRF) because the path routes API (`src/front/.server/panel/paths.ts`) did not validate the protocol of user-provided `destiny` and `callback` URLs, potentially allowing malicious internal URLs like `file://` or `gopher://`.
 **Learning:** Simply using `new URL(urlString)` is insufficient for security if the resulting protocol is not validated. This can enable SSRF attacks, allowing potential internal network probing or unauthorized access to internal resources.
 **Prevention:** Always strictly enforce `http:` or `https:` protocols using the `URL` object (`url.protocol === "http:" || url.protocol === "https:"`) when accepting user-provided outbound request destinations.
+
+## 2025-02-14 - Improve constant-time string comparison against V8 optimizations
+**Vulnerability:** The application was verifying `ADMIN_TOKEN` authentication tokens using a custom constant-time XOR-based string comparison function (`safeCompare`), but JavaScript engines (like V8) can optimize string operations (e.g. via JIT, early bailouts, or different string representations) rendering the custom loop vulnerable to subtle timing attacks.
+**Learning:** Custom JavaScript loop implementations for constant-time comparisons can be defeated by modern JS engine optimizations. Hashing strings first with a fixed-length cryptographic hash (like SHA-256) and comparing the hashes with `crypto.timingSafeEqual` is the most reliable cross-platform pattern to prevent timing leaks.
+**Prevention:** Avoid writing custom constant-time string comparison loops. For sensitive comparisons (passwords, tokens, HMACs), always hash both inputs with SHA-256 and compare the output using `node:crypto.timingSafeEqual`.
