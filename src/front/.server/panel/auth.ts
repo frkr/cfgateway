@@ -1,4 +1,5 @@
 import { createCookie } from "react-router";
+import * as crypto from "node:crypto";
 
 export const adminAuthCookie = createCookie("admin_token", {
   maxAge: 604_800, // one week
@@ -11,14 +12,11 @@ export function safeCompare(a: string | null | undefined, b: string | null | und
 	if (typeof a !== 'string' || typeof b !== 'string') {
 		return false;
 	}
-	let mismatch = a.length === b.length ? 0 : 1;
-	if (mismatch) {
-		b = a;
-	}
-	for (let i = 0; i < a.length; i++) {
-		mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-	}
-	return mismatch === 0;
+
+	const hashA = crypto.createHash('sha256').update(a).digest();
+	const hashB = crypto.createHash('sha256').update(b).digest();
+
+	return crypto.timingSafeEqual(hashA, hashB);
 }
 
 export async function checkAdminAuth(request: Request, env: Env) {
