@@ -120,11 +120,11 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, 
 		if (request.method === 'GET' ||
 			(!isEmpty(content) && content.length > 10)
 		) {
-			if (pathname.startsWith('/store/')) {
+			if (pathname === '/store' || pathname.startsWith('/store/')) {
 				await queueMessage(content, request.url, env, lab, true);
 				return HTTP_CREATED();
 			}
-			if (pathname.startsWith('/async/')) {
+			if (pathname === '/async' || pathname.startsWith('/async/')) {
 				const bearer = request.headers.get('Authorization');
 				const token = bearer ? bearer.replace('Bearer ', '') : null;
 				
@@ -136,8 +136,8 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, 
 				return HTTP_CREATED();
 			}
 			
-			if (pathname.startsWith('/sync/')) {
-				let normalizedPath = normalizePathKey(pathname.substring(6));
+			if (pathname === '/sync' || pathname.startsWith('/sync/')) {
+				let normalizedPath = normalizePathKey(pathname.length > 5 ? pathname.substring(6) : '');
 				if (!normalizedPath) {
 					throw new Error('Sync path is required.');
 				}
