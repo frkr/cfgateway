@@ -16,3 +16,8 @@
 **Vulnerability:** The application was verifying `ADMIN_TOKEN` authentication tokens using a custom constant-time XOR-based string comparison function (`safeCompare`), but JavaScript engines (like V8) can optimize string operations (e.g. via JIT, early bailouts, or different string representations) rendering the custom loop vulnerable to subtle timing attacks.
 **Learning:** Custom JavaScript loop implementations for constant-time comparisons can be defeated by modern JS engine optimizations. Hashing strings first with a fixed-length cryptographic hash (like SHA-256) and comparing the hashes with `crypto.timingSafeEqual` is the most reliable cross-platform pattern to prevent timing leaks.
 **Prevention:** Avoid writing custom constant-time string comparison loops. For sensitive comparisons (passwords, tokens, HMACs), always hash both inputs with SHA-256 and compare the output using `node:crypto.timingSafeEqual`.
+
+## 2026-07-09 - Fix Authentication Bypass via Path Matching
+**Vulnerability:** The application was using `.startsWith('/async/')` and `.startsWith('/store/')` to protect sensitive endpoints, allowing an attacker to request `/async-bypass` and completely bypass the authentication checks.
+**Learning:** Checking route paths purely by checking if they start with a string containing a trailing slash might ignore the root path (without trailing slash), and leaving off the trailing slash might allow matching unintended sibling paths.
+**Prevention:** Always verify paths against exact matches (e.g. `=== '/async'`) OR prefix matches using trailing slashes (`.startsWith('/async/')`). Avoid loose prefix matching (`.startsWith('/async')`).

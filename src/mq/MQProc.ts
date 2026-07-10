@@ -47,11 +47,11 @@ export default async function(rawmsg: Message<unknown>, env: Env) {
 	} catch (e) {
 	}
 	
-	if (path?.startsWith('/store')) {
+	if (path === '/store' || path?.startsWith('/store/')) {
 		
 		// Noop
 		
-	} else if (path?.startsWith('/async')) {
+	} else if (path === '/async' || path?.startsWith('/async/')) {
 		
 		await MQDestiny(rawmsg, env);
 		
