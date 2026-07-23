@@ -19,6 +19,23 @@ export default async function(rawmsg: Message<unknown>, env: Env) {
 	}
 	
 	try {
+		const callbackUrl = new URL(asyncContent.callback);
+		if (callbackUrl.protocol !== 'http:' && callbackUrl.protocol !== 'https:') {
+			await MQStore(rawmsg, env, {
+				type: 'error',
+				resettime: true
+			});
+			return;
+		}
+	} catch (e) {
+		await MQStore(rawmsg, env, {
+			type: 'error',
+			resettime: true
+		});
+		return;
+	}
+
+	try {
 		let headers = new Headers();
 		if (asyncContent.headersCallback) {
 			for (let [key, value] of Object.entries(asyncContent.headersCallback)) {
