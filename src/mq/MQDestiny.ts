@@ -17,6 +17,23 @@ export default async function(rawmsg: Message<unknown>, env: Env) {
 		});
 		return;
 	}
+
+	try {
+		const destinyUrl = new URL(asyncContent.destiny);
+		if (destinyUrl.protocol !== 'http:' && destinyUrl.protocol !== 'https:') {
+			await MQStore(rawmsg, env, {
+				type: 'error',
+				resettime: true
+			});
+			return;
+		}
+	} catch (e) {
+		await MQStore(rawmsg, env, {
+			type: 'error',
+			resettime: true
+		});
+		return;
+	}
 	
 	try {
 		let headers = new Headers();
