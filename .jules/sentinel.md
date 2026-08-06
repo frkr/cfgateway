@@ -21,3 +21,7 @@
 **Vulnerability:** The application was using `.startsWith('/async/')` and `.startsWith('/store/')` to protect sensitive endpoints, allowing an attacker to request `/async-bypass` and completely bypass the authentication checks.
 **Learning:** Checking route paths purely by checking if they start with a string containing a trailing slash might ignore the root path (without trailing slash), and leaving off the trailing slash might allow matching unintended sibling paths.
 **Prevention:** Always verify paths against exact matches (e.g. `=== '/async'`) OR prefix matches using trailing slashes (`.startsWith('/async/')`). Avoid loose prefix matching (`.startsWith('/async')`).
+## 2024-08-06 - Prevent SSRF in MQ Destinations
+**Vulnerability:** URLs fetched in background queue handlers (`MQDestiny.ts` and `MQCallback.ts`) were not validated for secure protocols before being passed to `fetch()`, potentially allowing SSRF via unsupported schemes like `file://` or `ftp://`.
+**Learning:** Even internal queue processors should distrust inputs hydrated from the database/storage, as they might have bypassed frontend validation or been manually inserted.
+**Prevention:** Always parse dynamic URLs using `new URL()` and explicitly enforce `http:` or `https:` protocols before using them in server-side `fetch()` requests.
