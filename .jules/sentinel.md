@@ -21,3 +21,8 @@
 **Vulnerability:** The application was using `.startsWith('/async/')` and `.startsWith('/store/')` to protect sensitive endpoints, allowing an attacker to request `/async-bypass` and completely bypass the authentication checks.
 **Learning:** Checking route paths purely by checking if they start with a string containing a trailing slash might ignore the root path (without trailing slash), and leaving off the trailing slash might allow matching unintended sibling paths.
 **Prevention:** Always verify paths against exact matches (e.g. `=== '/async'`) OR prefix matches using trailing slashes (`.startsWith('/async/')`). Avoid loose prefix matching (`.startsWith('/async')`).
+
+## 2025-02-14 - Prevent SSRF in background workers
+**Vulnerability:** Background workers (`MQDestiny.ts` and `MQCallback.ts`) were susceptible to Server-Side Request Forgery (SSRF). They fetched user-provided dynamic URLs (`destiny` and `callback`) retrieved from JSON configs in R2, but did not validate the protocol. This allowed attackers to potentially use schemes like `file://` or `gopher://` to access unauthorized local files or interact with internal systems.
+**Learning:** Even if URLs are validated when saved initially (e.g. in a UI or API endpoint), background processes that consume those URLs directly and execute `fetch` must still perform their own validation. This prevents exploits arising from directly modified state files or bypassing the initial UI.
+**Prevention:** Always parse dynamic URLs using `new URL()` in background workers and explicitly enforce `http:` or `https:` protocols before making any `fetch` calls. This ensures defense-in-depth across the application's boundaries.
