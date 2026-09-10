@@ -19,6 +19,21 @@ export default async function(rawmsg: Message<unknown>, env: Env) {
 	}
 	
 	try {
+		// Security Check: Validate URL to prevent SSRF
+		try {
+			const callbackUrl = new URL(asyncContent.callback);
+			if (callbackUrl.protocol !== 'http:' && callbackUrl.protocol !== 'https:') {
+				throw new Error('Invalid protocol');
+			}
+		} catch (urlError) {
+			console.error('Invalid callback URL, aborting to prevent SSRF:', asyncContent.callback);
+			await MQStore(rawmsg, env, {
+				type: 'error',
+				resettime: true
+			});
+			return;
+		}
+
 		let headers = new Headers();
 		if (asyncContent.headersCallback) {
 			for (let [key, value] of Object.entries(asyncContent.headersCallback)) {
