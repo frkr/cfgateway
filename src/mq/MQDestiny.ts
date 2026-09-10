@@ -19,6 +19,21 @@ export default async function(rawmsg: Message<unknown>, env: Env) {
 	}
 	
 	try {
+		// Security Check: Validate URL to prevent SSRF
+		try {
+			const destinyUrl = new URL(asyncContent.destiny);
+			if (destinyUrl.protocol !== 'http:' && destinyUrl.protocol !== 'https:') {
+				throw new Error('Invalid protocol');
+			}
+		} catch (urlError) {
+			console.error('Invalid destiny URL, aborting to prevent SSRF:', asyncContent.destiny);
+			await MQStore(rawmsg, env, {
+				type: 'error',
+				resettime: true
+			});
+			return;
+		}
+
 		let headers = new Headers();
 		if (asyncContent.headersDestiny) {
 			for (let [key, value] of Object.entries(asyncContent.headersDestiny)) {
