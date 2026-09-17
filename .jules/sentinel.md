@@ -21,3 +21,8 @@
 **Vulnerability:** The application was using `.startsWith('/async/')` and `.startsWith('/store/')` to protect sensitive endpoints, allowing an attacker to request `/async-bypass` and completely bypass the authentication checks.
 **Learning:** Checking route paths purely by checking if they start with a string containing a trailing slash might ignore the root path (without trailing slash), and leaving off the trailing slash might allow matching unintended sibling paths.
 **Prevention:** Always verify paths against exact matches (e.g. `=== '/async'`) OR prefix matches using trailing slashes (`.startsWith('/async/')`). Avoid loose prefix matching (`.startsWith('/async')`).
+
+## 2025-02-14 - Fix Server-Side Request Forgery (SSRF) via invalid protocols in background workers
+**Vulnerability:** Background queue workers (`src/mq/MQDestiny.ts` and `src/mq/MQCallback.ts`) were extracting URL destinations directly from Cloudflare queue messages and executing `fetch` calls against them without explicitly verifying the URL scheme.
+**Learning:** Even though `new URL()` might be used to parse a URL object, if the `.protocol` property is not explicitly checked, an attacker could inject `file://` or other arbitrary protocols, leading to Server-Side Request Forgery (SSRF). In a serverless/background environment, this can lead to arbitrary local file reads, querying internal metadata services, or bypassing egress filtering restrictions.
+**Prevention:** Always parse dynamic URL strings meant for HTTP requests using `new URL()` and explicitly enforce `http:` or `https:` protocols using a strict comparison (`url.protocol === 'http:' || url.protocol === 'https:'`) prior to initiating any `fetch` calls.
