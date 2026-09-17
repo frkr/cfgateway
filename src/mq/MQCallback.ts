@@ -17,6 +17,20 @@ export default async function(rawmsg: Message<unknown>, env: Env) {
 		});
 		return;
 	}
+
+	try {
+		const callbackUrl = new URL(asyncContent.callback);
+		if (callbackUrl.protocol !== 'http:' && callbackUrl.protocol !== 'https:') {
+			throw new Error('Invalid URL protocol');
+		}
+	} catch (error) {
+		console.error('Invalid callback URL:', error);
+		await MQStore(rawmsg, env, {
+			type: 'error',
+			resettime: true
+		});
+		return;
+	}
 	
 	try {
 		let headers = new Headers();
