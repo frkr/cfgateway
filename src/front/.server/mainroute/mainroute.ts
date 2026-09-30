@@ -15,6 +15,7 @@ import {
 } from '@/pathroute';
 import database from '@/pathroute.database.json';
 import { safeCompare } from '../panel/auth';
+import { cloudflareContext } from '@/context';
 
 //endregion
 
@@ -169,10 +170,16 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, 
 	}
 }
 
+function getCloudflareContext(context: any) {
+	return context?.get?.(cloudflareContext) ?? context?.cloudflare;
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
-	return handleRequest(request, context.cloudflare.env, context.cloudflare.ctx);
+	const cf = getCloudflareContext(context);
+	return handleRequest(request, cf.env, cf.ctx);
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-	return handleRequest(request, context.cloudflare.env, context.cloudflare.ctx);
+	const cf = getCloudflareContext(context);
+	return handleRequest(request, cf.env, cf.ctx);
 }
