@@ -1,7 +1,8 @@
 //region Imports
 import type { MQCFGATEWAYMessage } from '~/lib/MQCFGATEWAY';
-import { createRequestHandler } from 'react-router';
-import { HTTP_OK } from '~/lib/httpcodes';
+import { createRequestHandler, RouterContextProvider } from 'react-router';
+import { HTTP_OK } from '@/httpcodes';
+import { cloudflareContext } from '@/context';
 import MQStore from './mq/MQStore';
 import MQProc from './mq/MQProc';
 import MQCallback from './mq/MQCallback';
@@ -9,15 +10,6 @@ import database from './mq/database.json';
 //endregion
 
 //region Inicializacao React Router
-declare module 'react-router' {
-	export interface AppLoadContext {
-		cloudflare: {
-			env: Env;
-			ctx: ExecutionContext;
-		};
-	}
-}
-
 const requestHandler = createRequestHandler(
 	() => import('virtual:react-router/server-build'),
 	import.meta.env.MODE
@@ -44,9 +36,9 @@ export default {
 		if (request.method === 'OPTIONS') {
 			return HTTP_OK();
 		}
-		return requestHandler(request, {
-			cloudflare: { env, ctx }
-		});
+		const context = new RouterContextProvider();
+		context.set(cloudflareContext, { env, ctx });
+		return requestHandler(request, context);
 	},
 	
 	// Implementation for deleting old files from R2

@@ -14,6 +14,11 @@ import {
 	type PathRouteRow
 } from '@/pathroute';
 import { checkAdminAuth, isJsonRequest } from './auth';
+import { cloudflareContext } from '@/context';
+
+function getCloudflareContext(context: any) {
+	return context?.get?.(cloudflareContext) ?? context?.cloudflare;
+}
 
 type PathRoutePayload = {
 	path: string;
@@ -106,20 +111,21 @@ function validatePayload(payload: PathRoutePayload) {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
+	const cf = getCloudflareContext(context);
 	const wantsJson = isJsonRequest(request);
 	
-	const isAuthed = await checkAdminAuth(request, context.cloudflare.env);
+	const isAuthed = await checkAdminAuth(request, cf.env);
 	if (!isAuthed) {
 		if (wantsJson) {
 			return new Response('Unauthorized', { status: 401 });
 		}
 		
-		return buildData(context.cloudflare.env, [], true);
+		return buildData(cf.env, [], true);
 	}
 	
 	try {
-		const routes = await loadRoutes(context.cloudflare.env);
-		const data = buildData(context.cloudflare.env, routes);
+		const routes = await loadRoutes(cf.env);
+		const data = buildData(cf.env, routes);
 		
 		if (wantsJson) {
 			return Response.json(data);
@@ -128,7 +134,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 		return data;
 	} catch (e) {
 		console.error('Path routes loader error:', e);
-		const data = buildData(context.cloudflare.env, []);
+		const data = buildData(cf.env, []);
 		
 		if (wantsJson) {
 			return Response.json(data, { status: 500 });
@@ -139,7 +145,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-	const isAuthed = await checkAdminAuth(request, context.cloudflare.env);
+	const cf = getCloudflareContext(context);
+	const isAuthed = await checkAdminAuth(request, cf.env);
 	if (!isAuthed) {
 		return new Response('Unauthorized', { status: 401 });
 	}
@@ -149,7 +156,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 	}
 	
 	try {
-		await ensurePathRoutesTable(context.cloudflare.env);
+		await ensurePathRoutesTable(cf.env);
 		
 		const body = await request.json() as {
 			intent?: string;
@@ -158,13 +165,13 @@ export async function action({ request, context }: Route.ActionArgs) {
 		};
 		
 		if (body.intent === 'delete' && body.id) {
-			await context.cloudflare.env.DB.prepare(database.delete).bind(body.id).run();
+			await cf.env.DB.prepare(database.delete).bind(body.id).run();
 		} else if (body.intent === 'save' && body.route) {
 			const route = validatePayload(body.route);
 			const now = Date.now();
 			
 			if (body.id) {
-				await context.cloudflare.env.DB.prepare(database.update)
+				await cf.env.DB.prepare(database.update)
 					.bind(
 						route.path,
 						route.destiny,
@@ -182,7 +189,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 					)
 					.run();
 			} else {
-				await context.cloudflare.env.DB.prepare(database.insert)
+				await cf.env.DB.prepare(database.insert)
 					.bind(
 						await randomHEX(),
 						route.path,
@@ -205,11 +212,11 @@ export async function action({ request, context }: Route.ActionArgs) {
 			throw new Error('Invalid action payload.');
 		}
 		
-		const routes = await loadRoutes(context.cloudflare.env);
+		const routes = await loadRoutes(cf.env);
 		
 		return Response.json({
 			success: true,
-			...buildData(context.cloudflare.env, routes)
+			...buildData(cf.env, routes)
 		});
 	} catch (e) {
 		console.error('Path routes action error:', e);

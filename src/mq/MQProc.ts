@@ -13,7 +13,10 @@ async function storeLost(rawmsg: Message<unknown>, env: Env) {
 }
 
 async function hydrateDynamicRoute(msg: MQCFGATEWAYMessage, route: PathRouteRow, env: Env) {
-	const rawContent = await readR2Text(env.CFGATEWAY, msg?.filename);
+	if (!msg?.filename) {
+		return false;
+	}
+	const rawContent = await readR2Text(env.CFGATEWAY, msg.filename);
 	if (!rawContent) {
 		return false;
 	}
